@@ -7,9 +7,9 @@
     "npm": ">=11.0.0"
   },
   "scripts": {
-    "serve:web": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve web",
-    "serve:api": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve api",
-    "serve:mcp": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve mcp",
+    "serve:web": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve web --skip-nx-cache",
+    "serve:api": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve api --skip-nx-cache",
+    "serve:mcp": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx serve mcp --skip-nx-cache",
     "build": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx run-many -t build --projects=web,api,mcp",
     "build:web": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx build web",
     "build:api": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx build api",
