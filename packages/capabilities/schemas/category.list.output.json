@@ -1,0 +1,15 @@
+{
+  "$id": "https://quadrant.local/schemas/category.list.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["categories"],
+  "properties": {
+    "categories": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/category"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$id": "https://quadrant.local/schemas/task.postpone.input.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["taskId"],
+  "properties": {
+    "request_id": {
+      "$ref": "common.json#/$defs/requestId"
+    },
+    "confirmation_token": {
+      "$ref": "common.json#/$defs/confirmationToken"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "resumeWeekStart": {
+      "$ref": "common.json#/$defs/isoDate"
+    },
+    "weeksAhead": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

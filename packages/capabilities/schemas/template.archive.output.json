@@ -1,0 +1,34 @@
+{
+  "$id": "https://quadrant.local/schemas/template.archive.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["template"],
+  "properties": {
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "isDefault", "archived", "slots"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "common.json#/$defs/slotDraft"
+          }
+        }
+      }
+    }
+  }
+}

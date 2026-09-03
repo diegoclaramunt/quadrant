@@ -1,0 +1,45 @@
+{
+  "$id": "https://quadrant.local/schemas/task.process.input.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["taskId", "urgent", "important", "workType"],
+  "properties": {
+    "request_id": {
+      "$ref": "common.json#/$defs/requestId"
+    },
+    "confirmation_token": {
+      "$ref": "common.json#/$defs/confirmationToken"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "urgent": {
+      "type": "boolean"
+    },
+    "important": {
+      "type": "boolean"
+    },
+    "workType": {
+      "$ref": "common.json#/$defs/workType"
+    },
+    "nominalMinutes": {
+      "type": "integer"
+    },
+    "deadline": {
+      "$ref": "common.json#/$defs/isoDate"
+    },
+    "availableOn": {
+      "$ref": "common.json#/$defs/isoDate"
+    },
+    "projectId": {
+      "type": ["string", "null"]
+    },
+    "categoryId": {
+      "type": ["string", "null"]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "$id": "https://quadrant.local/schemas/envelope.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "validation_error",
+        "conflict",
+        "needs_confirmation",
+        "needs_clarification"
+      ]
+    },
+    "request_id": {
+      "type": ["string", "null"]
+    },
+    "result": {
+      "type": "object"
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "details": true,
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "confirmation_token": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string"
+    }
+  }
+}

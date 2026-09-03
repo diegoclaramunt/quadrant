@@ -1,0 +1,81 @@
+{
+  "$id": "https://quadrant.local/schemas/report.nominal_time.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["totals", "groups"],
+  "properties": {
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planned",
+        "executed",
+        "cancelled",
+        "missed",
+        "executedMinutes"
+      ],
+      "properties": {
+        "planned": {
+          "type": "integer"
+        },
+        "executed": {
+          "type": "integer"
+        },
+        "cancelled": {
+          "type": "integer"
+        },
+        "missed": {
+          "type": "integer"
+        },
+        "executedMinutes": {
+          "type": "integer"
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "planned",
+          "executed",
+          "cancelled",
+          "missed",
+          "executedMinutes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["task", "project", "category"]
+          },
+          "planned": {
+            "type": "integer"
+          },
+          "executed": {
+            "type": "integer"
+          },
+          "cancelled": {
+            "type": "integer"
+          },
+          "missed": {
+            "type": "integer"
+          },
+          "executedMinutes": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

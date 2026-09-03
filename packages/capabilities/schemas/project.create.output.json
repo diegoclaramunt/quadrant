@@ -1,0 +1,12 @@
+{
+  "$id": "https://quadrant.local/schemas/project.create.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project"],
+  "properties": {
+    "project": {
+      "$ref": "common.json#/$defs/project"
+    }
+  }
+}

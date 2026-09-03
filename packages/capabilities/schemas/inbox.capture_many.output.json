@@ -1,0 +1,15 @@
+{
+  "$id": "https://quadrant.local/schemas/inbox.capture_many.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tasks"],
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "common.json#/$defs/task"
+      }
+    }
+  }
+}

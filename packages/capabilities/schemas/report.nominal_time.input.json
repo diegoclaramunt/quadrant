@@ -1,0 +1,23 @@
+{
+  "$id": "https://quadrant.local/schemas/report.nominal_time.input.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "from": {
+      "$ref": "common.json#/$defs/isoDate"
+    },
+    "to": {
+      "$ref": "common.json#/$defs/isoDate"
+    },
+    "taskId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    },
+    "categoryId": {
+      "type": "string"
+    }
+  }
+}

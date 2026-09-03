@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "paths": {
+      "@quadrant/domain": ["packages/domain/src/index.ts"],
+      "@quadrant/application": ["packages/application/src/index.ts"],
+      "@quadrant/storage": ["packages/storage/src/index.ts"],
+      "@quadrant/capabilities": ["packages/capabilities/src/index.ts"]
+    }
+  }
+}

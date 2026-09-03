@@ -1,0 +1,367 @@
+{
+  "name": "quadrant",
+  "version": "1.0.0",
+  "description": "Capacidades públicas de Quadrant",
+  "capabilities": [
+    {
+      "id": "inbox.capture_many",
+      "version": "1.0.0",
+      "description": "Captura una o varias ideas en la bandeja",
+      "inputSchema": "./schemas/inbox.capture_many.input.json",
+      "outputSchema": "./schemas/inbox.capture_many.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Captura estas ideas: revisar factura y llamar a Ana"]
+    },
+    {
+      "id": "inbox.list",
+      "version": "1.0.0",
+      "description": "Lista la bandeja en orden de captura",
+      "inputSchema": "./schemas/inbox.list.input.json",
+      "outputSchema": "./schemas/inbox.list.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Qué hay en la bandeja"]
+    },
+    {
+      "id": "backlog.list",
+      "version": "1.0.0",
+      "description": "Lista el backlog de tareas procesadas",
+      "inputSchema": "./schemas/backlog.list.input.json",
+      "outputSchema": "./schemas/backlog.list.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Muéstrame el backlog"]
+    },
+    {
+      "id": "task.get",
+      "version": "1.0.0",
+      "description": "Obtiene una tarea por identificador o título",
+      "inputSchema": "./schemas/task.get.input.json",
+      "outputSchema": "./schemas/task.get.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Cómo está Gemelo digital"]
+    },
+    {
+      "id": "task.process",
+      "version": "1.0.0",
+      "description": "Procesa una tarea de la bandeja y la mueve al backlog",
+      "inputSchema": "./schemas/task.process.input.json",
+      "outputSchema": "./schemas/task.process.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Clasifica esta tarea como importante y urgente"]
+    },
+    {
+      "id": "task.update",
+      "version": "1.0.0",
+      "description": "Actualiza campos de una tarea abierta",
+      "inputSchema": "./schemas/task.update.input.json",
+      "outputSchema": "./schemas/task.update.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Cambia el proyecto de esta tarea"]
+    },
+    {
+      "id": "task.postpone",
+      "version": "1.0.0",
+      "description": "Pospone una tarea hasta una revisión semanal",
+      "inputSchema": "./schemas/task.postpone.input.json",
+      "outputSchema": "./schemas/task.postpone.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Déjala para la semana que viene"]
+    },
+    {
+      "id": "task.complete",
+      "version": "1.0.0",
+      "description": "Completa una tarea de forma binaria",
+      "inputSchema": "./schemas/task.complete.input.json",
+      "outputSchema": "./schemas/task.complete.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Marca Gemelo digital como hecha"]
+    },
+    {
+      "id": "task.archive",
+      "version": "1.0.0",
+      "description": "Archiva una tarea con confirmación explícita",
+      "inputSchema": "./schemas/task.archive.input.json",
+      "outputSchema": "./schemas/task.archive.output.json",
+      "sideEffect": "destructive",
+      "confirmation": "required",
+      "examples": ["Archiva esta tarea"]
+    },
+    {
+      "id": "task.unarchive",
+      "version": "1.0.0",
+      "description": "Restaura una tarea archivada a su estado previo",
+      "inputSchema": "./schemas/task.unarchive.input.json",
+      "outputSchema": "./schemas/task.unarchive.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Recupera esa tarea archivada"]
+    },
+    {
+      "id": "category.create",
+      "version": "1.0.0",
+      "description": "Crea una categoría",
+      "inputSchema": "./schemas/category.create.input.json",
+      "outputSchema": "./schemas/category.create.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Crea la categoría Warpcom"]
+    },
+    {
+      "id": "category.rename",
+      "version": "1.0.0",
+      "description": "Renombra una categoría",
+      "inputSchema": "./schemas/category.rename.input.json",
+      "outputSchema": "./schemas/category.rename.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Renombra Five a Five Consulting"]
+    },
+    {
+      "id": "category.archive",
+      "version": "1.0.0",
+      "description": "Archiva una categoría",
+      "inputSchema": "./schemas/category.archive.input.json",
+      "outputSchema": "./schemas/category.archive.output.json",
+      "sideEffect": "destructive",
+      "confirmation": "required",
+      "examples": ["Archiva la categoría personal"]
+    },
+    {
+      "id": "category.unarchive",
+      "version": "1.0.0",
+      "description": "Desarchiva una categoría",
+      "inputSchema": "./schemas/category.unarchive.input.json",
+      "outputSchema": "./schemas/category.unarchive.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Recupera la categoría personal"]
+    },
+    {
+      "id": "category.list",
+      "version": "1.0.0",
+      "description": "Lista categorías",
+      "inputSchema": "./schemas/category.list.input.json",
+      "outputSchema": "./schemas/category.list.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Lista las categorías"]
+    },
+    {
+      "id": "project.create",
+      "version": "1.0.0",
+      "description": "Crea un proyecto en una categoría",
+      "inputSchema": "./schemas/project.create.input.json",
+      "outputSchema": "./schemas/project.create.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Crea el proyecto Gemelo digital en Proyectos personales"]
+    },
+    {
+      "id": "project.rename",
+      "version": "1.0.0",
+      "description": "Renombra un proyecto",
+      "inputSchema": "./schemas/project.rename.input.json",
+      "outputSchema": "./schemas/project.rename.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Renombra Gemelo digital"]
+    },
+    {
+      "id": "project.move",
+      "version": "1.0.0",
+      "description": "Mueve un proyecto a otra categoría",
+      "inputSchema": "./schemas/project.move.input.json",
+      "outputSchema": "./schemas/project.move.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Mueve Gemelo digital a Proyectos vendibles"]
+    },
+    {
+      "id": "project.archive",
+      "version": "1.0.0",
+      "description": "Archiva un proyecto",
+      "inputSchema": "./schemas/project.archive.input.json",
+      "outputSchema": "./schemas/project.archive.output.json",
+      "sideEffect": "destructive",
+      "confirmation": "required",
+      "examples": ["Archiva el proyecto antiguo"]
+    },
+    {
+      "id": "project.unarchive",
+      "version": "1.0.0",
+      "description": "Desarchiva un proyecto",
+      "inputSchema": "./schemas/project.unarchive.input.json",
+      "outputSchema": "./schemas/project.unarchive.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Recupera el proyecto antiguo"]
+    },
+    {
+      "id": "project.list",
+      "version": "1.0.0",
+      "description": "Lista proyectos",
+      "inputSchema": "./schemas/project.list.input.json",
+      "outputSchema": "./schemas/project.list.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Lista los proyectos"]
+    },
+    {
+      "id": "template.create",
+      "version": "1.0.0",
+      "description": "Crea una plantilla semanal",
+      "inputSchema": "./schemas/template.create.input.json",
+      "outputSchema": "./schemas/template.create.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Crea una plantilla de fines de semana"]
+    },
+    {
+      "id": "template.duplicate",
+      "version": "1.0.0",
+      "description": "Duplica una plantilla",
+      "inputSchema": "./schemas/template.duplicate.input.json",
+      "outputSchema": "./schemas/template.duplicate.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Duplica la plantilla laborable"]
+    },
+    {
+      "id": "template.update",
+      "version": "1.0.0",
+      "description": "Actualiza una plantilla sin alterar semanas ya creadas",
+      "inputSchema": "./schemas/template.update.input.json",
+      "outputSchema": "./schemas/template.update.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Pon los bloques deep a 60 minutos en la plantilla"]
+    },
+    {
+      "id": "template.archive",
+      "version": "1.0.0",
+      "description": "Archiva una plantilla",
+      "inputSchema": "./schemas/template.archive.input.json",
+      "outputSchema": "./schemas/template.archive.output.json",
+      "sideEffect": "destructive",
+      "confirmation": "required",
+      "examples": ["Archiva esa plantilla"]
+    },
+    {
+      "id": "template.list",
+      "version": "1.0.0",
+      "description": "Lista plantillas semanales",
+      "inputSchema": "./schemas/template.list.input.json",
+      "outputSchema": "./schemas/template.list.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Qué plantillas tengo"]
+    },
+    {
+      "id": "week.open",
+      "version": "1.0.0",
+      "description": "Abre una semana copiando una plantilla",
+      "inputSchema": "./schemas/week.open.input.json",
+      "outputSchema": "./schemas/week.open.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Abre la semana actual"]
+    },
+    {
+      "id": "week.review",
+      "version": "1.0.0",
+      "description": "Cierra la semana abierta y abre la actual",
+      "inputSchema": "./schemas/week.review.input.json",
+      "outputSchema": "./schemas/week.review.output.json",
+      "sideEffect": "write",
+      "confirmation": "required",
+      "examples": ["Haz la revisión semanal"]
+    },
+    {
+      "id": "week.current",
+      "version": "1.0.0",
+      "description": "Consulta la semana abierta y sus slots",
+      "inputSchema": "./schemas/week.current.input.json",
+      "outputSchema": "./schemas/week.current.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Cómo está la semana"]
+    },
+    {
+      "id": "week.adjust_slots",
+      "version": "1.0.0",
+      "description": "Ajusta slots solo de la semana abierta",
+      "inputSchema": "./schemas/week.adjust_slots.input.json",
+      "outputSchema": "./schemas/week.adjust_slots.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Quita el segundo bloque deep del viernes"]
+    },
+    {
+      "id": "plan.propose",
+      "version": "1.0.0",
+      "description": "Propone una planificación sin aplicarla",
+      "inputSchema": "./schemas/plan.propose.input.json",
+      "outputSchema": "./schemas/plan.propose.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Propón el plan de la semana"]
+    },
+    {
+      "id": "plan.accept",
+      "version": "1.0.0",
+      "description": "Acepta una propuesta de planificación",
+      "inputSchema": "./schemas/plan.accept.input.json",
+      "outputSchema": "./schemas/plan.accept.output.json",
+      "sideEffect": "write",
+      "confirmation": "required",
+      "examples": ["Acepta esa planificación"]
+    },
+    {
+      "id": "block.schedule",
+      "version": "1.0.0",
+      "description": "Asigna una tarea a un slot compatible",
+      "inputSchema": "./schemas/block.schedule.input.json",
+      "outputSchema": "./schemas/block.schedule.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Pon Gemelo digital en un bloque de proyecto mañana"]
+    },
+    {
+      "id": "block.execute",
+      "version": "1.0.0",
+      "description": "Marca un bloque como ejecutado",
+      "inputSchema": "./schemas/block.execute.input.json",
+      "outputSchema": "./schemas/block.execute.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["He hecho el bloque de Gemelo digital"]
+    },
+    {
+      "id": "block.cancel",
+      "version": "1.0.0",
+      "description": "Cancela un bloque planificado",
+      "inputSchema": "./schemas/block.cancel.input.json",
+      "outputSchema": "./schemas/block.cancel.output.json",
+      "sideEffect": "write",
+      "confirmation": "none",
+      "examples": ["Cancela ese bloque"]
+    },
+    {
+      "id": "report.nominal_time",
+      "version": "1.0.0",
+      "description": "Reporta bloques y minutos nominales",
+      "inputSchema": "./schemas/report.nominal_time.input.json",
+      "outputSchema": "./schemas/report.nominal_time.output.json",
+      "sideEffect": "read",
+      "confirmation": "none",
+      "examples": ["Cuántas horas nominales llevo en Gemelo digital"]
+    }
+  ]
+}

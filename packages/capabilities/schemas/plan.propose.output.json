@@ -1,0 +1,72 @@
+{
+  "$id": "https://quadrant.local/schemas/plan.propose.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal"],
+  "properties": {
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "weekPlanId",
+        "assignments",
+        "unmatched",
+        "emptySlots"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "weekPlanId": {
+          "type": "string"
+        },
+        "accepted": {
+          "type": "boolean"
+        },
+        "assignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["taskId", "slotId", "nominalMinutes"],
+            "properties": {
+              "taskId": {
+                "type": "string"
+              },
+              "slotId": {
+                "type": "string"
+              },
+              "nominalMinutes": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "unmatched": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["taskId", "reason"],
+            "properties": {
+              "taskId": {
+                "type": "string"
+              },
+              "reason": {
+                "$ref": "common.json#/$defs/unmatchedReason"
+              }
+            }
+          }
+        },
+        "emptySlots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

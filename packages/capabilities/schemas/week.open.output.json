@@ -1,0 +1,46 @@
+{
+  "$id": "https://quadrant.local/schemas/week.open.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["week"],
+  "properties": {
+    "week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "weekStart", "status", "slots", "blocks"],
+      "properties": {
+        "id": {
+          "type": ["string", "null"]
+        },
+        "weekStart": {
+          "type": ["string", "null"]
+        },
+        "status": {
+          "type": ["string", "null"]
+        },
+        "templateId": {
+          "type": ["string", "null"]
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "common.json#/$defs/slotDraft"
+          }
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "common.json#/$defs/block"
+          }
+        },
+        "resumedTaskIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

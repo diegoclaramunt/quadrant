@@ -1,0 +1,18 @@
+{
+  "$id": "https://quadrant.local/schemas/plan.accept.input.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposalId"],
+  "properties": {
+    "request_id": {
+      "$ref": "common.json#/$defs/requestId"
+    },
+    "confirmation_token": {
+      "$ref": "common.json#/$defs/confirmationToken"
+    },
+    "proposalId": {
+      "type": "string"
+    }
+  }
+}

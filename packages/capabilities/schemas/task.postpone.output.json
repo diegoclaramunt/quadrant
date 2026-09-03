@@ -1,0 +1,15 @@
+{
+  "$id": "https://quadrant.local/schemas/task.postpone.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task", "suggestArchive"],
+  "properties": {
+    "task": {
+      "$ref": "common.json#/$defs/task"
+    },
+    "suggestArchive": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$id": "https://quadrant.local/schemas/backlog.list.input.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "categoryId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string"
+    }
+  }
+}

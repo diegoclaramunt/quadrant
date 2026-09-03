@@ -1,0 +1,8 @@
+dist
+coverage
+.nx
+.angular
+.data
+node_modules
+packages/capabilities/src/generated
+*.sqlite

@@ -1,0 +1,12 @@
+{
+  "$id": "https://quadrant.local/schemas/task.update.output.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task"],
+  "properties": {
+    "task": {
+      "$ref": "common.json#/$defs/task"
+    }
+  }
+}

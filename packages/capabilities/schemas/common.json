@@ -1,0 +1,275 @@
+{
+  "$id": "https://quadrant.local/schemas/common.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requestId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirmationToken": {
+      "type": "string",
+      "minLength": 1
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["ui", "api", "mcp", "skill", "voice"]
+    },
+    "workType": {
+      "type": "string",
+      "enum": ["brief", "short", "deep", "project"]
+    },
+    "slotKind": {
+      "type": "string",
+      "enum": ["deep", "project"]
+    },
+    "taskStatus": {
+      "type": "string",
+      "enum": ["inbox", "backlog", "snoozed", "completed", "archived"]
+    },
+    "blockStatus": {
+      "type": "string",
+      "enum": ["planned", "executed", "cancelled", "missed"]
+    },
+    "quadrant": {
+      "type": "string",
+      "enum": ["ui", "in", "un", "nn"]
+    },
+    "unmatchedReason": {
+      "type": "string",
+      "enum": [
+        "no_compatible_slot",
+        "slot_full",
+        "already_planned",
+        "not_available"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "urgent",
+        "important",
+        "quadrant",
+        "channel",
+        "createdAt",
+        "updatedAt",
+        "consecutivePostponements",
+        "suggestArchive",
+        "hidden"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "notes": {
+          "type": ["string", "null"]
+        },
+        "originalText": {
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/channel"
+        },
+        "projectId": {
+          "type": ["string", "null"]
+        },
+        "categoryId": {
+          "type": ["string", "null"]
+        },
+        "effectiveCategoryId": {
+          "type": ["string", "null"]
+        },
+        "status": {
+          "$ref": "#/$defs/taskStatus"
+        },
+        "urgent": {
+          "type": "boolean"
+        },
+        "important": {
+          "type": "boolean"
+        },
+        "quadrant": {
+          "$ref": "#/$defs/quadrant"
+        },
+        "workType": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/workType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nominalMinutes": {
+          "type": ["integer", "null"]
+        },
+        "deadline": {
+          "type": ["string", "null"]
+        },
+        "availableOn": {
+          "type": ["string", "null"]
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "processedAt": {
+          "type": ["string", "null"]
+        },
+        "completedAt": {
+          "type": ["string", "null"]
+        },
+        "archivedAt": {
+          "type": ["string", "null"]
+        },
+        "consecutivePostponements": {
+          "type": "integer"
+        },
+        "suggestArchive": {
+          "type": "boolean"
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "archived"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "archived": {
+          "type": "boolean"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "categoryId", "archived"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "categoryId": {
+          "type": "string"
+        },
+        "archived": {
+          "type": "boolean"
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "weekday", "order", "kind", "durationMinutes"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "weekday": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "order": {
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/slotKind"
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "startTime": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "slotDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weekday", "order", "kind", "durationMinutes"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "weekday": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "order": {
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/slotKind"
+        },
+        "durationMinutes": {
+          "type": "integer"
+        },
+        "startTime": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "weekPlanId",
+        "slotId",
+        "taskId",
+        "status",
+        "nominalMinutes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "weekPlanId": {
+          "type": "string"
+        },
+        "slotId": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/blockStatus"
+        },
+        "nominalMinutes": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
