@@ -1,0 +1,31 @@
+﻿# Environment
+.env
+.env.local
+.codex/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.cache/
+.tmp/
+out-tsc/
+
+# Local data
+.data/
+*.sqlite
+*.sqlite-journal
+
+# Nx / Angular
+.nx/
+.angular
+
+__screenshots__/
+coverage/
+
+# Logs
+*.log
+
+# IDE
+.idea/
