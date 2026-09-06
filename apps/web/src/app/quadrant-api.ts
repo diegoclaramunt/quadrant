@@ -46,27 +46,22 @@ export class QuadrantApi {
     id: string,
     payload: Record<string, unknown> = {},
   ): Promise<Envelope<T>> {
-    let envelope = await firstValueFrom(
+    return firstValueFrom(
       this.http.post<Envelope<T>>(`/api/capabilities/${id}`, payload),
     );
-    if (
-      envelope.status === 'needs_confirmation' &&
-      envelope.confirmation_token
-    ) {
-      const accepted = window.confirm(
-        envelope.summary ?? '¿Confirmas esta acción?',
-      );
-      if (!accepted) {
-        return envelope;
-      }
-      envelope = await firstValueFrom(
-        this.http.post<Envelope<T>>(`/api/capabilities/${id}`, {
-          ...payload,
-          confirmation_token: envelope.confirmation_token,
-        }),
-      );
-    }
-    return envelope;
+  }
+
+  async confirm<T>(
+    id: string,
+    payload: Record<string, unknown>,
+    token: string,
+  ) {
+    return firstValueFrom(
+      this.http.post<Envelope<T>>(`/api/capabilities/${id}`, {
+        ...payload,
+        confirmation_token: token,
+      }),
+    );
   }
 
   unwrap<T>(envelope: Envelope<T>): T {

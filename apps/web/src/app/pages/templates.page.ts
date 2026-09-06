@@ -1,5 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { QuadrantApi } from '../quadrant-api';
+import type { HttpsQuadrantLocalSchemasTemplateListOutputJson as TemplateResult } from '@quadrant/capabilities';
+import { slotLabel } from '../work-labels';
 
 @Component({
   selector: 'app-templates-page',
@@ -15,7 +17,18 @@ import { QuadrantApi } from '../quadrant-api';
               (predeterminada)
             }
           </h2>
-          <p>{{ template.slots.length }} slots</p>
+          <p>
+            {{ template.slots.length }} bloques ·
+            {{ totalHours(template) }} horas nominales semanales
+          </p>
+          <ul>
+            @for (slot of template.slots; track $index) {
+              <li>
+                {{ days[slot.weekday - 1] }} · {{ slotLabel(slot.kind) }} ·
+                {{ slot.durationMinutes }} min nominales
+              </li>
+            }
+          </ul>
           <button
             type="button"
             class="secondary"
@@ -29,10 +42,23 @@ import { QuadrantApi } from '../quadrant-api';
   `,
 })
 export class TemplatesPage {
+  protected readonly slotLabel = slotLabel;
+  protected readonly days = [
+    'Lunes',
+    'Martes',
+    'Miércoles',
+    'Jueves',
+    'Viernes',
+    'Sábado',
+    'Domingo',
+  ];
   private readonly api = inject(QuadrantApi);
-  protected readonly templates = signal<
-    Array<{ id: string; name: string; isDefault: boolean; slots: unknown[] }>
-  >([]);
+  protected readonly templates = signal<TemplateResult['templates']>([]);
+  totalHours(template: TemplateResult['templates'][number]) {
+    return new Intl.NumberFormat('es', { maximumFractionDigits: 2 }).format(
+      template.slots.reduce((sum, slot) => sum + slot.durationMinutes, 0) / 60,
+    );
+  }
 
   constructor() {
     void this.reload();
@@ -44,14 +70,7 @@ export class TemplatesPage {
   }
 
   private async reload() {
-    const envelope = await this.api.invoke<{
-      templates: Array<{
-        id: string;
-        name: string;
-        isDefault: boolean;
-        slots: unknown[];
-      }>;
-    }>('template.list');
+    const envelope = await this.api.invoke<TemplateResult>('template.list');
     if (envelope.result) {
       this.templates.set(envelope.result.templates);
     }

@@ -7,36 +7,59 @@ import { QuadrantApi, type TaskView } from '../quadrant-api';
   imports: [RouterLink],
   template: `
     <section class="stack">
-      <h1>Bandeja</h1>
-      <p class="muted">
-        Captura ideas sin clasificarlas. El orden es el de llegada.
-      </p>
-      <form class="panel stack" (submit)="capture($event)">
-        <label>
-          Texto (una línea por idea)
-          <textarea
-            name="batch"
-            rows="4"
-            [value]="draft()"
-            (input)="draft.set($any($event.target).value)"
-          ></textarea>
-        </label>
-        <div class="row">
-          <button type="submit">Capturar</button>
-          <a routerLink="/process">Procesar tarjetas</a>
+      <header class="page-heading">
+        <div>
+          <p class="eyebrow">Fuera de tu cabeza</p>
+          <h1>Bandeja</h1>
+          <p class="editorial-intro">Primero captura. Después decide.</p>
         </div>
-        @if (error()) {
-          <p class="error">{{ error() }}</p>
-        }
-      </form>
-      <ul class="stack">
-        @for (task of tasks(); track task.id) {
-          <li class="card">
-            <strong>{{ task.title }}</strong>
-            <p class="muted">{{ task.channel }} · {{ task.originalText }}</p>
-          </li>
-        }
-      </ul>
+        <a routerLink="/process" class="action-link"
+          >Procesar tarjetas <span aria-hidden="true">↗</span></a
+        >
+      </header>
+      <details class="panel">
+        <summary>Añadir ideas a la bandeja</summary>
+        <form class="stack" (submit)="capture($event)">
+          <label>
+            Texto (una línea por idea)
+            <textarea
+              name="batch"
+              rows="4"
+              [value]="draft()"
+              (input)="draft.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <div class="row">
+            <button type="submit">Capturar</button>
+          </div>
+          @if (error()) {
+            <p class="error">{{ error() }}</p>
+          }
+        </form>
+      </details>
+      @if (!tasks().length) {
+        <section class="panel empty-state">
+          <span class="empty-symbol" aria-hidden="true">✓</span>
+          <h2>Todo en su sitio.</h2>
+          <p>
+            Tu bandeja está despejada. Captura una idea cuando aparezca; aquí
+            tendrá su espacio.
+          </p>
+        </section>
+      }
+      @if (tasks().length) {
+        <p class="eyebrow">Por decidir · {{ tasks().length }}</p>
+        <ul class="stack">
+          @for (task of tasks(); track task.id) {
+            <li class="card">
+              <strong>{{ task.title }}</strong>
+              @if (task.notes) {
+                <p class="muted">{{ task.notes }}</p>
+              }
+            </li>
+          }
+        </ul>
+      }
     </section>
   `,
 })

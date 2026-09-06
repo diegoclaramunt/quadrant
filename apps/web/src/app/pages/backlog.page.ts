@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { QuadrantApi, type TaskView } from '../quadrant-api';
+import { workLabel, workHelp } from '../work-labels';
 
 @Component({
   selector: 'app-backlog-page',
@@ -7,14 +8,15 @@ import { QuadrantApi, type TaskView } from '../quadrant-api';
     <section class="stack">
       <h1>Backlog</h1>
       <p class="muted">
-        Tareas procesadas, planificables ahora o más adelante. Sin progreso.
+        Tareas procesadas, planificables ahora o más adelante. {{ workHelp }}
       </p>
       <ul class="stack">
         @for (task of tasks(); track task.id) {
           <li class="card">
             <strong>{{ task.title }}</strong>
             <p class="muted">
-              {{ task.workType }} · {{ quadrantLabel(task.quadrant) }}
+              {{ workLabel(task.workType) }} ·
+              {{ quadrantLabel(task.quadrant) }}
               @if (task.deadline) {
                 · límite {{ task.deadline }}
               }
@@ -34,6 +36,8 @@ import { QuadrantApi, type TaskView } from '../quadrant-api';
   `,
 })
 export class BacklogPage {
+  protected readonly workLabel = workLabel;
+  protected readonly workHelp = workHelp;
   private readonly api = inject(QuadrantApi);
   protected readonly tasks = signal<TaskView[]>([]);
 

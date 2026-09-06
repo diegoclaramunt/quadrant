@@ -1,12 +1,54 @@
 <div class="shell">
   <header class="top">
-    <a routerLink="/inbox" class="brand">Quadrant</a>
-    <p class="tagline">Captura, decide, planifica por bloques.</p>
+    <a routerLink="/today" class="brand"
+      ><span class="brand-mark" aria-hidden="true"
+        ><i></i><i></i><i></i><i></i></span
+      >Quadrant<span class="brand-period">.</span></a
+    >
+    <p class="tagline">Un espacio para lo importante</p>
+    <app-capture-panel />
   </header>
   <div class="layout">
     <nav class="nav" aria-label="Principal">
-      @for (link of links; track link.path) {
-      <a [routerLink]="link.path" routerLinkActive="active">{{ link.label }}</a>
+      @for (link of primaryLinks; track link.path) {
+      <a
+        [routerLink]="link.path"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+        (click)="moreOpen = false"
+        ><svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="link.icon" /></svg
+        >{{ link.label }}</a
+      >
+      }
+      <button
+        class="nav-more"
+        type="button"
+        [attr.aria-expanded]="moreOpen"
+        aria-controls="secondary-navigation"
+        (click)="moreOpen = !moreOpen"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 11v2m7-2v2m7-2v2" /></svg
+        >Más
+      </button>
+      @if (moreOpen) {
+      <div
+        id="secondary-navigation"
+        class="secondary-nav"
+        aria-label="Navegación secundaria"
+        (keydown.escape)="moreOpen = false"
+      >
+        @for (link of secondaryLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="active"
+          (click)="moreOpen = false"
+          >{{ link.label }}</a
+        >
+        }
+        <a routerLink="/process" routerLinkActive="active">Procesar bandeja</a>
+      </div>
       }
     </nav>
     <main class="main">
