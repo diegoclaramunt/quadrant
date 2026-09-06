@@ -1,6 +1,6 @@
 {
   "name": "quadrant",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Capacidades públicas de Quadrant",
   "capabilities": [
     {
@@ -45,7 +45,7 @@
     },
     {
       "id": "task.process",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Procesa una tarea de la bandeja y la mueve al backlog",
       "inputSchema": "./schemas/task.process.input.json",
       "outputSchema": "./schemas/task.process.output.json",
@@ -265,7 +265,7 @@
     },
     {
       "id": "week.open",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Abre una semana copiando una plantilla",
       "inputSchema": "./schemas/week.open.input.json",
       "outputSchema": "./schemas/week.open.output.json",
@@ -275,17 +275,20 @@
     },
     {
       "id": "week.review",
-      "version": "1.0.0",
-      "description": "Cierra la semana abierta y abre la actual",
+      "version": "1.1.0",
+      "description": "Cierra la semana abierta y abre la actual o siguiente según targetWeekStart, sin reabrir semanas existentes",
       "inputSchema": "./schemas/week.review.input.json",
       "outputSchema": "./schemas/week.review.output.json",
       "sideEffect": "write",
       "confirmation": "required",
-      "examples": ["Haz la revisión semanal"]
+      "examples": [
+        "Haz la revisión semanal",
+        "Cierra el viernes y prepara el lunes siguiente"
+      ]
     },
     {
       "id": "week.current",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Consulta la semana abierta y sus slots",
       "inputSchema": "./schemas/week.current.input.json",
       "outputSchema": "./schemas/week.current.output.json",
@@ -295,7 +298,7 @@
     },
     {
       "id": "week.adjust_slots",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Ajusta slots solo de la semana abierta",
       "inputSchema": "./schemas/week.adjust_slots.input.json",
       "outputSchema": "./schemas/week.adjust_slots.output.json",
@@ -305,17 +308,20 @@
     },
     {
       "id": "plan.propose",
-      "version": "1.0.0",
-      "description": "Propone una planificación sin aplicarla",
+      "version": "1.1.0",
+      "description": "Propone sin aplicar: reservas explícitas primero; vencidas y fechas de la semana, cuadrante y antigüedad después. Respeta disponibilidad por día",
       "inputSchema": "./schemas/plan.propose.input.json",
       "outputSchema": "./schemas/plan.propose.output.json",
       "sideEffect": "read",
       "confirmation": "none",
-      "examples": ["Propón el plan de la semana"]
+      "examples": [
+        "Propón el plan de la semana",
+        "Reserva esta tarea importante en este bloque y completa el resto"
+      ]
     },
     {
       "id": "plan.accept",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Acepta una propuesta de planificación",
       "inputSchema": "./schemas/plan.accept.input.json",
       "outputSchema": "./schemas/plan.accept.output.json",

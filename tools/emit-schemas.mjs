@@ -192,10 +192,13 @@ const CAPABILITIES = [
   ],
   [
     'week.review',
-    'Cierra la semana abierta y abre la actual',
+    'Cierra la semana abierta y abre la actual o siguiente según targetWeekStart, sin reabrir semanas existentes',
     'write',
     'required',
-    ['Haz la revisión semanal'],
+    [
+      'Haz la revisión semanal',
+      'Cierra el viernes y prepara el lunes siguiente',
+    ],
   ],
   [
     'week.current',
@@ -213,10 +216,13 @@ const CAPABILITIES = [
   ],
   [
     'plan.propose',
-    'Propone una planificación sin aplicarla',
+    'Propone sin aplicar: reservas explícitas primero; vencidas y fechas de la semana, cuadrante y antigüedad después. Respeta disponibilidad por día',
     'read',
     'none',
-    ['Propón el plan de la semana'],
+    [
+      'Propón el plan de la semana',
+      'Reserva esta tarea importante en este bloque y completa el resto',
+    ],
   ],
   [
     'plan.accept',
@@ -469,7 +475,9 @@ const inputs = {
       important: { type: 'boolean' },
       workType: { $ref: 'common.json#/$defs/workType' },
       nominalMinutes: { type: 'integer' },
-      deadline: { $ref: 'common.json#/$defs/isoDate' },
+      deadline: {
+        anyOf: [{ $ref: 'common.json#/$defs/isoDate' }, { type: 'null' }],
+      },
       availableOn: { $ref: 'common.json#/$defs/isoDate' },
       projectId: { type: ['string', 'null'] },
       categoryId: { type: ['string', 'null'] },
@@ -664,6 +672,7 @@ const inputs = {
     properties: {
       ...mutable,
       templateId: { type: 'string' },
+      targetWeekStart: { $ref: 'common.json#/$defs/isoDate', format: 'date' },
     },
   },
   'week.current': {
@@ -701,7 +710,10 @@ const inputs = {
   'plan.propose': {
     type: 'object',
     additionalProperties: false,
-    properties: { weekPlanId: { type: 'string' } },
+    properties: {
+      weekPlanId: { type: 'string' },
+      reservations: reservationSchema(),
+    },
   },
   'plan.accept': {
     type: 'object',
@@ -1025,13 +1037,16 @@ function weekOutput() {
           templateId: { type: ['string', 'null'] },
           slots: {
             type: 'array',
-            items: { $ref: 'common.json#/$defs/slotDraft' },
+            items: { $ref: 'common.json#/$defs/slot' },
           },
           blocks: {
             type: 'array',
             items: { $ref: 'common.json#/$defs/block' },
           },
           resumedTaskIds: { type: 'array', items: { type: 'string' } },
+          today: { type: 'string', format: 'date' },
+          timezone: { type: 'string' },
+          capacity: capacitySchema(),
         },
       },
     },
@@ -1058,6 +1073,7 @@ function proposalOutput() {
           id: { type: 'string' },
           weekPlanId: { type: 'string' },
           accepted: { type: 'boolean' },
+          reservations: reservationSchema(),
           assignments: {
             type: 'array',
             items: {
@@ -1090,6 +1106,47 @@ function proposalOutput() {
   };
 }
 
+function reservationSchema() {
+  return {
+    type: 'array',
+    uniqueItems: true,
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['taskId', 'slotId'],
+      properties: {
+        taskId: { type: 'string', minLength: 1 },
+        slotId: { type: 'string', minLength: 1 },
+      },
+    },
+  };
+}
+
+function capacitySchema() {
+  const totals = {
+    totalMinutes: { type: 'integer' },
+    occupiedMinutes: { type: 'integer' },
+    freeMinutes: { type: 'integer' },
+  };
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required: [...Object.keys(totals), 'days'],
+    properties: {
+      ...totals,
+      days: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['weekday', ...Object.keys(totals)],
+          properties: { weekday: { type: 'integer' }, ...totals },
+        },
+      },
+    },
+  };
+}
+
 function reportGroup() {
   return {
     type: 'object',
@@ -1107,12 +1164,22 @@ function reportGroup() {
 
 const manifest = {
   name: 'quadrant',
-  version: '1.0.0',
+  version: '1.1.0',
   description: 'Capacidades públicas de Quadrant',
   capabilities: CAPABILITIES.map(
     ([id, description, sideEffect, confirmation, examples]) => ({
       id,
-      version: '1.0.0',
+      version: [
+        'task.process',
+        'week.open',
+        'week.review',
+        'week.current',
+        'week.adjust_slots',
+        'plan.propose',
+        'plan.accept',
+      ].includes(id)
+        ? '1.1.0'
+        : '1.0.0',
       description,
       inputSchema: `./schemas/${id}.input.json`,
       outputSchema: `./schemas/${id}.output.json`,

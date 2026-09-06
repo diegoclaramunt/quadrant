@@ -12,6 +12,10 @@
     },
     "templateId": {
       "type": "string"
+    },
+    "targetWeekStart": {
+      "$ref": "common.json#/$defs/isoDate",
+      "format": "date"
     }
   }
 }

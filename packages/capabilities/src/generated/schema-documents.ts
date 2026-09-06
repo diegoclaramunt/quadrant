@@ -620,7 +620,14 @@ export const schemaDocuments: Record<string, unknown> = {
         "type": "integer"
       },
       "deadline": {
-        "$ref": "common.json#/$defs/isoDate"
+        "anyOf": [
+          {
+            "$ref": "common.json#/$defs/isoDate"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "availableOn": {
         "$ref": "common.json#/$defs/isoDate"
@@ -1661,7 +1668,7 @@ export const schemaDocuments: Record<string, unknown> = {
           "slots": {
             "type": "array",
             "items": {
-              "$ref": "common.json#/$defs/slotDraft"
+              "$ref": "common.json#/$defs/slot"
             }
           },
           "blocks": {
@@ -1674,6 +1681,61 @@ export const schemaDocuments: Record<string, unknown> = {
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "totalMinutes",
+              "occupiedMinutes",
+              "freeMinutes",
+              "days"
+            ],
+            "properties": {
+              "totalMinutes": {
+                "type": "integer"
+              },
+              "occupiedMinutes": {
+                "type": "integer"
+              },
+              "freeMinutes": {
+                "type": "integer"
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "weekday",
+                    "totalMinutes",
+                    "occupiedMinutes",
+                    "freeMinutes"
+                  ],
+                  "properties": {
+                    "weekday": {
+                      "type": "integer"
+                    },
+                    "totalMinutes": {
+                      "type": "integer"
+                    },
+                    "occupiedMinutes": {
+                      "type": "integer"
+                    },
+                    "freeMinutes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1694,6 +1756,10 @@ export const schemaDocuments: Record<string, unknown> = {
       },
       "templateId": {
         "type": "string"
+      },
+      "targetWeekStart": {
+        "$ref": "common.json#/$defs/isoDate",
+        "format": "date"
       }
     }
   },
@@ -1744,7 +1810,7 @@ export const schemaDocuments: Record<string, unknown> = {
           "slots": {
             "type": "array",
             "items": {
-              "$ref": "common.json#/$defs/slotDraft"
+              "$ref": "common.json#/$defs/slot"
             }
           },
           "blocks": {
@@ -1757,6 +1823,61 @@ export const schemaDocuments: Record<string, unknown> = {
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "totalMinutes",
+              "occupiedMinutes",
+              "freeMinutes",
+              "days"
+            ],
+            "properties": {
+              "totalMinutes": {
+                "type": "integer"
+              },
+              "occupiedMinutes": {
+                "type": "integer"
+              },
+              "freeMinutes": {
+                "type": "integer"
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "weekday",
+                    "totalMinutes",
+                    "occupiedMinutes",
+                    "freeMinutes"
+                  ],
+                  "properties": {
+                    "weekday": {
+                      "type": "integer"
+                    },
+                    "totalMinutes": {
+                      "type": "integer"
+                    },
+                    "occupiedMinutes": {
+                      "type": "integer"
+                    },
+                    "freeMinutes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1817,7 +1938,7 @@ export const schemaDocuments: Record<string, unknown> = {
           "slots": {
             "type": "array",
             "items": {
-              "$ref": "common.json#/$defs/slotDraft"
+              "$ref": "common.json#/$defs/slot"
             }
           },
           "blocks": {
@@ -1830,6 +1951,61 @@ export const schemaDocuments: Record<string, unknown> = {
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "totalMinutes",
+              "occupiedMinutes",
+              "freeMinutes",
+              "days"
+            ],
+            "properties": {
+              "totalMinutes": {
+                "type": "integer"
+              },
+              "occupiedMinutes": {
+                "type": "integer"
+              },
+              "freeMinutes": {
+                "type": "integer"
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "weekday",
+                    "totalMinutes",
+                    "occupiedMinutes",
+                    "freeMinutes"
+                  ],
+                  "properties": {
+                    "weekday": {
+                      "type": "integer"
+                    },
+                    "totalMinutes": {
+                      "type": "integer"
+                    },
+                    "occupiedMinutes": {
+                      "type": "integer"
+                    },
+                    "freeMinutes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1948,7 +2124,7 @@ export const schemaDocuments: Record<string, unknown> = {
           "slots": {
             "type": "array",
             "items": {
-              "$ref": "common.json#/$defs/slotDraft"
+              "$ref": "common.json#/$defs/slot"
             }
           },
           "blocks": {
@@ -1961,6 +2137,61 @@ export const schemaDocuments: Record<string, unknown> = {
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "totalMinutes",
+              "occupiedMinutes",
+              "freeMinutes",
+              "days"
+            ],
+            "properties": {
+              "totalMinutes": {
+                "type": "integer"
+              },
+              "occupiedMinutes": {
+                "type": "integer"
+              },
+              "freeMinutes": {
+                "type": "integer"
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "weekday",
+                    "totalMinutes",
+                    "occupiedMinutes",
+                    "freeMinutes"
+                  ],
+                  "properties": {
+                    "weekday": {
+                      "type": "integer"
+                    },
+                    "totalMinutes": {
+                      "type": "integer"
+                    },
+                    "occupiedMinutes": {
+                      "type": "integer"
+                    },
+                    "freeMinutes": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -1975,6 +2206,28 @@ export const schemaDocuments: Record<string, unknown> = {
     "properties": {
       "weekPlanId": {
         "type": "string"
+      },
+      "reservations": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "taskId",
+            "slotId"
+          ],
+          "properties": {
+            "taskId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slotId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
       }
     }
   },
@@ -2006,6 +2259,28 @@ export const schemaDocuments: Record<string, unknown> = {
           },
           "accepted": {
             "type": "boolean"
+          },
+          "reservations": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "taskId",
+                "slotId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "slotId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           },
           "assignments": {
             "type": "array",
@@ -2107,6 +2382,28 @@ export const schemaDocuments: Record<string, unknown> = {
           },
           "accepted": {
             "type": "boolean"
+          },
+          "reservations": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "taskId",
+                "slotId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "slotId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           },
           "assignments": {
             "type": "array",

@@ -27,7 +27,14 @@
       "type": "integer"
     },
     "deadline": {
-      "$ref": "common.json#/$defs/isoDate"
+      "anyOf": [
+        {
+          "$ref": "common.json#/$defs/isoDate"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "availableOn": {
       "$ref": "common.json#/$defs/isoDate"

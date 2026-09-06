@@ -25,7 +25,7 @@
         "slots": {
           "type": "array",
           "items": {
-            "$ref": "common.json#/$defs/slotDraft"
+            "$ref": "common.json#/$defs/slot"
           }
         },
         "blocks": {
@@ -38,6 +38,61 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "today": {
+          "type": "string",
+          "format": "date"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "capacity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "totalMinutes",
+            "occupiedMinutes",
+            "freeMinutes",
+            "days"
+          ],
+          "properties": {
+            "totalMinutes": {
+              "type": "integer"
+            },
+            "occupiedMinutes": {
+              "type": "integer"
+            },
+            "freeMinutes": {
+              "type": "integer"
+            },
+            "days": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "weekday",
+                  "totalMinutes",
+                  "occupiedMinutes",
+                  "freeMinutes"
+                ],
+                "properties": {
+                  "weekday": {
+                    "type": "integer"
+                  },
+                  "totalMinutes": {
+                    "type": "integer"
+                  },
+                  "occupiedMinutes": {
+                    "type": "integer"
+                  },
+                  "freeMinutes": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
           }
         }
       }

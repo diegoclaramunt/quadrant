@@ -467,6 +467,10 @@ export interface HttpsQuadrantLocalSchemasPlanAcceptOutputJson {
     id: string;
     weekPlanId: string;
     accepted?: boolean;
+    reservations?: {
+      taskId: string;
+      slotId: string;
+    }[];
     assignments: {
       taskId: string;
       slotId: string;
@@ -483,6 +487,10 @@ export interface HttpsQuadrantLocalSchemasPlanAcceptOutputJson {
 // plan.propose.input.json
 export interface HttpsQuadrantLocalSchemasPlanProposeInputJson {
   weekPlanId?: string;
+  reservations?: {
+    taskId: string;
+    slotId: string;
+  }[];
 }
 
 // plan.propose.output.json
@@ -491,6 +499,10 @@ export interface HttpsQuadrantLocalSchemasPlanProposeOutputJson {
     id: string;
     weekPlanId: string;
     accepted?: boolean;
+    reservations?: {
+      taskId: string;
+      slotId: string;
+    }[];
     assignments: {
       taskId: string;
       slotId: string;
@@ -807,7 +819,7 @@ export interface HttpsQuadrantLocalSchemasTaskProcessInputJson {
   important: boolean;
   workType: "brief" | "short" | "deep" | "project";
   nominalMinutes?: number;
-  deadline?: string;
+  deadline?: string | null;
   availableOn?: string;
   projectId?: string | null;
   categoryId?: string | null;
@@ -1116,13 +1128,26 @@ export interface HttpsQuadrantLocalSchemasWeekAdjustSlotsOutputJson {
     weekStart: string | null;
     status: string | null;
     templateId?: string | null;
-    slots: SlotDraft[];
+    slots: Slot[];
     blocks: Block[];
     resumedTaskIds?: string[];
+    today?: string;
+    timezone?: string;
+    capacity?: {
+      totalMinutes: number;
+      occupiedMinutes: number;
+      freeMinutes: number;
+      days: {
+        weekday: number;
+        totalMinutes: number;
+        occupiedMinutes: number;
+        freeMinutes: number;
+      }[];
+    };
   };
 }
-export interface SlotDraft {
-  id?: string;
+export interface Slot {
+  id: string;
   weekday: number;
   order: number;
   kind: "deep" | "project";
@@ -1148,13 +1173,26 @@ export interface HttpsQuadrantLocalSchemasWeekCurrentOutputJson {
     weekStart: string | null;
     status: string | null;
     templateId?: string | null;
-    slots: SlotDraft[];
+    slots: Slot[];
     blocks: Block[];
     resumedTaskIds?: string[];
+    today?: string;
+    timezone?: string;
+    capacity?: {
+      totalMinutes: number;
+      occupiedMinutes: number;
+      freeMinutes: number;
+      days: {
+        weekday: number;
+        totalMinutes: number;
+        occupiedMinutes: number;
+        freeMinutes: number;
+      }[];
+    };
   };
 }
-export interface SlotDraft {
-  id?: string;
+export interface Slot {
+  id: string;
   weekday: number;
   order: number;
   kind: "deep" | "project";
@@ -1185,13 +1223,26 @@ export interface HttpsQuadrantLocalSchemasWeekOpenOutputJson {
     weekStart: string | null;
     status: string | null;
     templateId?: string | null;
-    slots: SlotDraft[];
+    slots: Slot[];
     blocks: Block[];
     resumedTaskIds?: string[];
+    today?: string;
+    timezone?: string;
+    capacity?: {
+      totalMinutes: number;
+      occupiedMinutes: number;
+      freeMinutes: number;
+      days: {
+        weekday: number;
+        totalMinutes: number;
+        occupiedMinutes: number;
+        freeMinutes: number;
+      }[];
+    };
   };
 }
-export interface SlotDraft {
-  id?: string;
+export interface Slot {
+  id: string;
   weekday: number;
   order: number;
   kind: "deep" | "project";
@@ -1212,6 +1263,7 @@ export interface HttpsQuadrantLocalSchemasWeekReviewInputJson {
   request_id?: string;
   confirmation_token?: string;
   templateId?: string;
+  targetWeekStart?: string;
 }
 
 // week.review.output.json
@@ -1221,13 +1273,26 @@ export interface HttpsQuadrantLocalSchemasWeekReviewOutputJson {
     weekStart: string | null;
     status: string | null;
     templateId?: string | null;
-    slots: SlotDraft[];
+    slots: Slot[];
     blocks: Block[];
     resumedTaskIds?: string[];
+    today?: string;
+    timezone?: string;
+    capacity?: {
+      totalMinutes: number;
+      occupiedMinutes: number;
+      freeMinutes: number;
+      days: {
+        weekday: number;
+        totalMinutes: number;
+        occupiedMinutes: number;
+        freeMinutes: number;
+      }[];
+    };
   };
 }
-export interface SlotDraft {
-  id?: string;
+export interface Slot {
+  id: string;
   weekday: number;
   order: number;
   kind: "deep" | "project";
