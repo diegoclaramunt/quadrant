@@ -4,6 +4,7 @@ import {
   eisenhowerQuadrant,
   isParentArchived,
   shouldSuggestArchive,
+  weekCapacity,
   type Category,
   type Project,
   type Task,
@@ -113,6 +114,7 @@ export function presentWeek(
     slots: slots.map(presentSlot),
     blocks: blocks.map(presentBlock),
     resumedTaskIds,
+    capacity: weekCapacity(slots, blocks),
   };
 }
 

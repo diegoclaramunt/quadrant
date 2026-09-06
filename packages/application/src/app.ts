@@ -19,18 +19,19 @@ import {
   currentMonday,
   declaredTaskDuration,
   defaultDomainContext,
-  isoWeekday,
   mondayOf,
   normalizeTemplateSlot,
   notFoundError,
   originAfterUnarchive,
   proposePlan,
   resolveTaskTitle,
+  reviewWeekStart,
   statusAfterSnoozeResume,
   todayIso,
   validationError,
   ymdInTimeZone,
   type DomainContext,
+  type PlanReservation,
   type SlotKind,
   type Task,
   type WeekPlan,
@@ -726,8 +727,17 @@ export class QuadrantApp {
     nowIso: string,
   ): Envelope {
     const timezone = repos.settings.get().timezone;
-    const currentStart = currentMonday(this.domain.clock, timezone);
+    const currentStart = reviewWeekStart(
+      todayIso(this.domain.clock, timezone),
+      body.targetWeekStart as string | undefined,
+    );
     const open = repos.weeks.open();
+    if (open && currentStart <= open.weekStart) {
+      throw conflictError('La semana destino debe ser posterior a la abierta');
+    }
+    if (repos.weeks.getByStart(currentStart)) {
+      throw conflictError('La semana destino ya existe');
+    }
     if (open) {
       for (const block of repos.blocks.forWeek(open.id)) {
         if (block.status === 'planned') {
@@ -754,15 +764,11 @@ export class QuadrantApp {
         repos.postponements.update(item);
       }
     }
-    const existing = repos.weeks.getByStart(currentStart);
-    const plan =
-      existing ??
-      this.openFromTemplate(String(body.templateId ?? ''), currentStart, repos);
-    if (existing && existing.status !== 'open') {
-      existing.status = 'open';
-      existing.closedAt = null;
-      repos.weeks.update(existing);
-    }
+    const plan = this.openFromTemplate(
+      String(body.templateId ?? ''),
+      currentStart,
+      repos,
+    );
     return ok({
       week: presentWeek(
         plan,
@@ -775,15 +781,20 @@ export class QuadrantApp {
 
   private weekCurrent(repos: QuadrantRepositories): Envelope {
     const open = repos.weeks.open();
+    const timezone = repos.settings.get().timezone;
+    const calendar = { timezone, today: todayIso(this.domain.clock, timezone) };
     if (!open) {
-      return ok({ week: presentWeek(null, [], []) });
+      return ok({ week: { ...presentWeek(null, [], []), ...calendar } });
     }
     return ok({
-      week: presentWeek(
-        open,
-        repos.weeks.slots(open.id),
-        repos.blocks.forWeek(open.id),
-      ),
+      week: {
+        ...presentWeek(
+          open,
+          repos.weeks.slots(open.id),
+          repos.blocks.forWeek(open.id),
+        ),
+        ...calendar,
+      },
     });
   }
 
@@ -811,6 +822,9 @@ export class QuadrantApp {
         });
       } else if (op === 'remove') {
         const slotId = String(operation.slotId);
+        if (!repos.weeks.slots(open.id).some((slot) => slot.id === slotId)) {
+          throw notFoundError('Slot no encontrado en la semana abierta');
+        }
         const active = repos.blocks
           .forSlot(slotId)
           .filter(
@@ -826,6 +840,18 @@ export class QuadrantApp {
         const current = slots.find((slot) => slot.id === operation.slotId);
         if (!current) {
           throw notFoundError('Slot no encontrado');
+        }
+        if (
+          repos.blocks
+            .forSlot(current.id)
+            .some(
+              (block) =>
+                block.status === 'planned' || block.status === 'executed',
+            )
+        ) {
+          throw conflictError(
+            'No se puede cambiar un slot con bloques activos',
+          );
         }
         if (operation.weekday) {
           current.weekday = Number(operation.weekday);
@@ -845,7 +871,10 @@ export class QuadrantApp {
         if ('startTime' in operation) {
           current.startTime = (operation.startTime as string | null) ?? null;
         }
-        repos.weeks.updateSlot(current);
+        repos.weeks.updateSlot({
+          ...current,
+          ...normalizeTemplateSlot(current),
+        });
       }
     }
     return ok({
@@ -865,7 +894,7 @@ export class QuadrantApp {
     const week = body.weekPlanId
       ? this.requireWeek(String(body.weekPlanId), repos)
       : repos.weeks.open();
-    if (!week) {
+    if (!week || week.status !== 'open') {
       throw conflictError('No hay una semana abierta');
     }
     const timezone = repos.settings.get().timezone;
@@ -873,9 +902,11 @@ export class QuadrantApp {
       ...proposePlan(
         {
           today: todayIso(this.domain.clock, timezone),
+          weekStart: week.weekStart,
+          reservations: body.reservations as PlanReservation[] | undefined,
           tasks: repos.tasks.list(),
           slots: repos.weeks.slots(week.id),
-          blocks: repos.blocks.forWeek(week.id),
+          blocks: repos.blocks.list(),
           hiddenTaskIds: hiddenTaskIds(repos),
         },
         this.domain.ids(),
@@ -890,6 +921,7 @@ export class QuadrantApp {
         id: proposal.id,
         weekPlanId: proposal.weekPlanId,
         accepted: false,
+        reservations: proposal.reservations,
         assignments: proposal.assignments,
         unmatched: proposal.unmatched,
         emptySlots: proposal.emptySlots,
@@ -912,19 +944,38 @@ export class QuadrantApp {
           id: proposal.id,
           weekPlanId: proposal.weekPlanId,
           accepted: true,
+          reservations: proposal.reservations,
           assignments: proposal.assignments,
           unmatched: proposal.unmatched,
           emptySlots: proposal.emptySlots,
         },
       });
     }
-    for (const assignment of proposal.assignments) {
-      this.scheduleIntoSlot(
-        this.requireTask(assignment.taskId, repos),
-        assignment.slotId,
-        repos,
-        nowIso,
-      );
+    const week = repos.weeks.open();
+    if (!week || week.id !== proposal.weekPlanId) {
+      throw conflictError('La semana de la propuesta ya no está abierta');
+    }
+    try {
+      for (const assignment of proposal.assignments) {
+        const block = this.scheduleIntoSlot(
+          this.requireTask(assignment.taskId, repos),
+          assignment.slotId,
+          repos,
+          nowIso,
+        );
+        if (block.nominalMinutes !== assignment.nominalMinutes) {
+          throw conflictError(
+            'La duración ha cambiado; genera una nueva propuesta',
+          );
+        }
+      }
+    } catch (error) {
+      if (error instanceof DomainError) {
+        throw conflictError(
+          `La propuesta ya no es compatible: ${error.message}`,
+        );
+      }
+      throw error;
     }
     proposal.acceptedAt = nowIso;
     repos.proposals.update(proposal);
@@ -933,6 +984,7 @@ export class QuadrantApp {
         id: proposal.id,
         weekPlanId: proposal.weekPlanId,
         accepted: true,
+        reservations: proposal.reservations,
         assignments: proposal.assignments,
         unmatched: proposal.unmatched,
         emptySlots: proposal.emptySlots,
@@ -976,6 +1028,20 @@ export class QuadrantApp {
     }
     if (block.status !== 'planned') {
       throw conflictError('Solo se puede ejecutar un bloque planned');
+    }
+    const week = this.requireWeek(block.weekPlanId, repos);
+    const slot = repos.weeks
+      .slots(week.id)
+      .find((item) => item.id === block.slotId);
+    if (
+      week.status !== 'open' ||
+      !slot ||
+      addDays(week.weekStart, slot.weekday - 1) >
+        todayIso(this.domain.clock, repos.settings.get().timezone)
+    ) {
+      throw conflictError(
+        'El bloque no se puede ejecutar antes de su día ni en una semana cerrada',
+      );
     }
     block.status = 'executed';
     block.executedAt = nowIso;
@@ -1101,7 +1167,8 @@ export class QuadrantApp {
         body.nominalMinutes as number | null,
       );
     }
-    next.deadline = (body.deadline as string | undefined) ?? next.deadline;
+    if ('deadline' in body)
+      next.deadline = (body.deadline as string | null) ?? null;
     next.availableOn =
       (body.availableOn as string | undefined) ?? next.availableOn;
     if (typeof body.notes === 'string') {
@@ -1164,6 +1231,13 @@ export class QuadrantApp {
     if (!week || !slot) {
       throw notFoundError('Slot no encontrado en la semana abierta');
     }
+    const date = addDays(week.weekStart, slot.weekday - 1);
+    if (
+      date < todayIso(this.domain.clock, repos.settings.get().timezone) ||
+      (task.availableOn && task.availableOn > date)
+    ) {
+      throw conflictError('La tarea no está disponible en la fecha del bloque');
+    }
     const occupancy = {
       slot,
       blocks: repos.blocks.forSlot(slot.id),
@@ -1199,8 +1273,9 @@ export class QuadrantApp {
     const date = body.date as string | undefined;
     let candidates = slots;
     if (date) {
-      const weekday = isoWeekday(date);
-      candidates = candidates.filter((slot) => slot.weekday === weekday);
+      candidates = candidates.filter(
+        (slot) => addDays(week.weekStart, slot.weekday - 1) === date,
+      );
     }
     if (kind) {
       candidates = candidates.filter((slot) => slot.kind === kind);
@@ -1377,7 +1452,12 @@ export class QuadrantApp {
       return `Archivar la plantilla «${template?.name ?? body.templateId}».`;
     }
     if (capabilityId === 'week.review') {
-      return 'Cerrar la semana abierta, marcar bloques pending como missed y abrir la semana actual.';
+      const target = reviewWeekStart(
+        todayIso(this.domain.clock, repos.settings.get().timezone),
+        body.targetWeekStart as string | undefined,
+      );
+      const open = repos.weeks.open();
+      return `${open ? `Cerrar ahora la semana del ${open.weekStart} y marcar sus bloques pendientes como no realizados. ` : ''}Abrir la semana del ${target} al ${addDays(target, 6)}. Las tareas abiertas no se reprogramarán automáticamente.`;
     }
     if (capabilityId === 'plan.accept') {
       return `Aceptar la propuesta ${body.proposalId} y crear los bloques planificados.`;

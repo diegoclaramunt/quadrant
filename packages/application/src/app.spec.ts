@@ -7,7 +7,10 @@ import { createQuadrantApp } from './app';
 import type { Envelope } from './envelope';
 
 function app() {
-  return createQuadrantApp(openStore(':memory:'));
+  return createQuadrantApp(openStore(':memory:'), {
+    clock: { now: () => new Date('2026-09-07T10:00:00.000Z') },
+    ids: defaultIdGenerator(),
+  });
 }
 
 function result<T>(envelope: Envelope): T {

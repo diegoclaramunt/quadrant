@@ -702,6 +702,7 @@ export class SqliteStore implements UnitOfWork {
             assignments: payload.assignments,
             unmatched: payload.unmatched,
             emptySlots: payload.emptySlots,
+            reservations: payload.reservations ?? [],
           };
         },
         insert(proposal: PlanningProposal) {
@@ -717,6 +718,7 @@ export class SqliteStore implements UnitOfWork {
               assignments: proposal.assignments,
               unmatched: proposal.unmatched,
               emptySlots: proposal.emptySlots,
+              reservations: proposal.reservations,
             }),
           );
         },
@@ -729,6 +731,7 @@ export class SqliteStore implements UnitOfWork {
               assignments: proposal.assignments,
               unmatched: proposal.unmatched,
               emptySlots: proposal.emptySlots,
+              reservations: proposal.reservations,
             }),
             proposal.id,
           );
