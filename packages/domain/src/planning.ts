@@ -1,11 +1,12 @@
 import { QUADRANT_PRIORITY, eisenhowerQuadrant } from './eisenhower';
-import type { Occupancy } from './compatibility';
-import { canAssignTaskToSlot } from './compatibility';
+import { canAssignTaskToSlot, type Occupancy } from './compatibility';
+import { addDays, mondayOf } from './clock';
+import { conflictError } from './errors';
 import type {
+  PlanReservation,
   PlanningProposal,
   ProposalAssignment,
   Task,
-  UnmatchedReason,
   UnmatchedTask,
   WeekSlot,
   WorkBlock,
@@ -13,59 +14,39 @@ import type {
 
 export interface PlanningContext {
   today: string;
+  weekStart?: string;
   tasks: Task[];
   slots: WeekSlot[];
   blocks: WorkBlock[];
   hiddenTaskIds: Set<string>;
+  reservations?: PlanReservation[];
 }
 
-export function sortPlanningCandidates(tasks: Task[], today: string): Task[] {
+export function sortPlanningCandidates(
+  tasks: Task[],
+  today: string,
+  weekStart = mondayOf(today),
+): Task[] {
+  const end = addDays(weekStart, 6);
+  const byDeadline = (a: Task, b: Task) =>
+    (a.deadline ?? '9999-12-31').localeCompare(b.deadline ?? '9999-12-31');
   return [...tasks].sort((a, b) => {
-    const deadlineRank = (task: Task) => {
-      if (!task.deadline) {
-        return Number.POSITIVE_INFINITY;
-      }
-      return task.deadline < today ? -1 : task.deadline.localeCompare(today);
-    };
-    const deadlineDelta = deadlineRank(a) - deadlineRank(b);
-    if (deadlineDelta !== 0) {
-      return deadlineDelta;
-    }
-    const quadrantDelta =
+    const aDue = Boolean(a.deadline && a.deadline <= end);
+    const bDue = Boolean(b.deadline && b.deadline <= end);
+    if (aDue !== bDue) return aDue ? -1 : 1;
+    if (aDue && byDeadline(a, b)) return byDeadline(a, b);
+    const quadrant =
       QUADRANT_PRIORITY[eisenhowerQuadrant(a.urgent, a.important)] -
       QUADRANT_PRIORITY[eisenhowerQuadrant(b.urgent, b.important)];
-    if (quadrantDelta !== 0) {
-      return quadrantDelta;
-    }
-    const aAge = a.processedAt ?? a.createdAt;
-    const bAge = b.processedAt ?? b.createdAt;
-    return aAge.localeCompare(bAge);
+    return (
+      quadrant ||
+      byDeadline(a, b) ||
+      (a.processedAt ?? a.createdAt).localeCompare(
+        b.processedAt ?? b.createdAt,
+      ) ||
+      a.id.localeCompare(b.id)
+    );
   });
-}
-
-export function unmatchedReasonFor(
-  task: Task,
-  today: string,
-  plannedBlocks: WorkBlock[],
-  hadCompatibleSlot: boolean,
-  hadCapacity: boolean,
-): UnmatchedReason {
-  if (task.availableOn && task.availableOn > today) {
-    return 'not_available';
-  }
-  if (
-    task.workType !== 'project' &&
-    plannedBlocks.some((block) => block.status === 'planned')
-  ) {
-    return 'already_planned';
-  }
-  if (!hadCompatibleSlot) {
-    return 'no_compatible_slot';
-  }
-  if (!hadCapacity) {
-    return 'slot_full';
-  }
-  return 'no_compatible_slot';
 }
 
 export function proposePlan(
@@ -74,154 +55,138 @@ export function proposePlan(
   weekPlanId: string,
   createdAt: string,
 ): Omit<PlanningProposal, 'acceptedAt'> {
-  const occupancyBySlot = new Map<string, Occupancy>();
-  for (const slot of context.slots) {
-    occupancyBySlot.set(slot.id, {
-      slot,
-      blocks: context.blocks.filter((block) => block.slotId === slot.id),
-    });
-  }
+  const weekStart = context.weekStart ?? mondayOf(context.today);
+  const reservations = (context.reservations ?? []).map((item) => ({
+    ...item,
+  }));
+  const occupancy = new Map<string, Occupancy>(
+    context.slots.map((slot) => [
+      slot.id,
+      {
+        slot,
+        blocks: context.blocks.filter((block) => block.slotId === slot.id),
+      },
+    ]),
+  );
   const tasksById = new Map(context.tasks.map((task) => [task.id, task]));
   const assignments: ProposalAssignment[] = [];
   const unmatched: UnmatchedTask[] = [];
-  const candidates = sortPlanningCandidates(
-    context.tasks.filter((task) => {
-      if (task.status !== 'backlog') {
-        return false;
-      }
-      if (context.hiddenTaskIds.has(task.id)) {
-        return false;
-      }
-      if (!task.workType) {
-        return false;
-      }
-      return true;
-    }),
-    context.today,
-  );
-
-  const orderedSlots = [...context.slots].sort((a, b) => {
-    if (a.weekday !== b.weekday) {
-      return a.weekday - b.weekday;
-    }
-    return a.order - b.order;
-  });
-
-  for (const task of candidates) {
-    const plannedForTask = context.blocks.filter(
-      (block) =>
-        block.taskId === task.id &&
-        (block.status === 'planned' ||
-          assignments.some((item) => item.taskId === task.id)),
+  const eligible = (task: Task) =>
+    task.status === 'backlog' &&
+    !context.hiddenTaskIds.has(task.id) &&
+    Boolean(task.workType);
+  const available = (task: Task, slot: WeekSlot) => {
+    const date = addDays(weekStart, slot.weekday - 1);
+    return (
+      date >= context.today && (!task.availableOn || task.availableOn <= date)
     );
-    const virtualPlanned = [
-      ...plannedForTask,
-      ...assignments
-        .filter((item) => item.taskId === task.id)
-        .map((item) => ({
-          id: item.slotId,
-          weekPlanId,
-          slotId: item.slotId,
-          taskId: task.id,
-          status: 'planned' as const,
-          nominalMinutes: item.nominalMinutes,
-          createdAt,
-          executedAt: null,
-          cancelledAt: null,
-        })),
-    ];
+  };
+  const alreadyPlanned = (task: Task) =>
+    task.workType !== 'project' &&
+    (context.blocks.some(
+      (block) => block.taskId === task.id && block.status === 'planned',
+    ) ||
+      assignments.some((assignment) => assignment.taskId === task.id));
+  const assign = (task: Task, place: Occupancy, minutes: number) => {
+    assignments.push({
+      taskId: task.id,
+      slotId: place.slot.id,
+      nominalMinutes: minutes,
+    });
+    place.blocks.push({
+      id: `proposal-${proposalId}-${assignments.length}`,
+      weekPlanId,
+      slotId: place.slot.id,
+      taskId: task.id,
+      status: 'planned',
+      nominalMinutes: minutes,
+      createdAt,
+      executedAt: null,
+      cancelledAt: null,
+    });
+  };
 
-    if (task.availableOn && task.availableOn > context.today) {
-      unmatched.push({ taskId: task.id, reason: 'not_available' });
-      continue;
-    }
+  const seen = new Set<string>();
+  for (const reservation of reservations) {
+    const key = JSON.stringify([reservation.taskId, reservation.slotId]);
+    const task = tasksById.get(reservation.taskId);
+    const place = occupancy.get(reservation.slotId);
     if (
-      task.workType !== 'project' &&
-      virtualPlanned.some((block) => block.status === 'planned')
+      seen.has(key) ||
+      !task ||
+      !place ||
+      !eligible(task) ||
+      alreadyPlanned(task) ||
+      !available(task, place.slot)
     ) {
+      throw conflictError(
+        'Reserva duplicada, no disponible o fuera del backlog y la semana',
+      );
+    }
+    seen.add(key);
+    const match = canAssignTaskToSlot(task, place, tasksById);
+    if (!match.ok) throw conflictError(match.reason);
+    assign(task, place, match.minutes);
+  }
+
+  const reservedTasks = new Set(reservations.map((item) => item.taskId));
+  const slots = [...context.slots].sort(
+    (a, b) =>
+      a.weekday - b.weekday || a.order - b.order || a.id.localeCompare(b.id),
+  );
+  const candidates = sortPlanningCandidates(
+    context.tasks.filter(eligible),
+    context.today,
+    weekStart,
+  );
+  for (const task of candidates) {
+    if (reservedTasks.has(task.id)) continue;
+    if (alreadyPlanned(task)) {
       unmatched.push({ taskId: task.id, reason: 'already_planned' });
       continue;
     }
-
-    let hadCompatibleSlot = false;
-    let hadCapacity = false;
+    const compatible = slots.filter(
+      (slot) => (slot.kind === 'project') === (task.workType === 'project'),
+    );
+    const dated = compatible.filter((slot) => available(task, slot));
     let assigned = false;
-    for (const slot of orderedSlots) {
-      const occupancy = occupancyBySlot.get(slot.id);
-      if (!occupancy) {
-        continue;
-      }
-      const compatibleKind =
-        (slot.kind === 'project' && task.workType === 'project') ||
-        (slot.kind === 'deep' && task.workType !== 'project');
-      if (compatibleKind) {
-        hadCompatibleSlot = true;
-      }
-      const result = canAssignTaskToSlot(task, occupancy, tasksById);
-      if (result.ok) {
-        assignments.push({
-          taskId: task.id,
-          slotId: slot.id,
-          nominalMinutes: result.minutes,
-        });
-        occupancy.blocks = [
-          ...occupancy.blocks,
-          {
-            id: `proposal-${proposalId}-${task.id}-${slot.id}`,
-            weekPlanId,
-            slotId: slot.id,
-            taskId: task.id,
-            status: 'planned',
-            nominalMinutes: result.minutes,
-            createdAt,
-            executedAt: null,
-            cancelledAt: null,
-          },
-        ];
+    for (const slot of dated) {
+      const place = occupancy.get(slot.id)!;
+      const match = canAssignTaskToSlot(task, place, tasksById);
+      if (match.ok) {
+        assign(task, place, match.minutes);
         assigned = true;
         break;
       }
-      if (compatibleKind) {
-        hadCapacity =
-          hadCapacity ||
-          result.reason.includes('superaría') ||
-          result.reason.includes('ocupado');
-      }
     }
-    if (!assigned) {
+    if (!assigned)
       unmatched.push({
         taskId: task.id,
-        reason: unmatchedReasonFor(
-          task,
-          context.today,
-          virtualPlanned,
-          hadCompatibleSlot,
-          hadCapacity,
-        ),
+        reason:
+          compatible.length === 0
+            ? 'no_compatible_slot'
+            : dated.length === 0
+              ? 'not_available'
+              : 'slot_full',
       });
-    }
   }
-
-  const usedSlotIds = new Set(assignments.map((item) => item.slotId));
-  const emptySlots = context.slots
-    .filter((slot) => {
-      const occupancy = occupancyBySlot.get(slot.id);
-      if (!occupancy) {
-        return true;
-      }
-      const active = occupancy.blocks.filter(
-        (block) => block.status === 'planned' || block.status === 'executed',
-      );
-      return active.length === 0 && !usedSlotIds.has(slot.id);
-    })
-    .map((slot) => slot.id);
-
   return {
     id: proposalId,
     weekPlanId,
     createdAt,
+    reservations,
     assignments,
     unmatched,
-    emptySlots,
+    emptySlots: slots
+      .filter(
+        (slot) =>
+          !occupancy
+            .get(slot.id)!
+            .blocks.some(
+              (block) =>
+                block.status === 'planned' || block.status === 'executed',
+            ),
+      )
+      .map((slot) => slot.id),
   };
 }

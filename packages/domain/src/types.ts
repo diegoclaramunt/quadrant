@@ -127,6 +127,12 @@ export interface PlanningProposal {
   assignments: ProposalAssignment[];
   unmatched: UnmatchedTask[];
   emptySlots: string[];
+  reservations: PlanReservation[];
+}
+
+export interface PlanReservation {
+  taskId: string;
+  slotId: string;
 }
 
 export interface ProposalAssignment {

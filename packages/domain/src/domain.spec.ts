@@ -18,7 +18,7 @@ import {
 } from './clock';
 import { consecutivePostponements, shouldSuggestArchive } from './postponement';
 import { applyProjectAssociation, effectiveCategoryId } from './task';
-import { defaultTemplateSlots } from './week';
+import { defaultTemplateSlots, reviewWeekStart, weekCapacity } from './week';
 import { proposePlan, sortPlanningCandidates } from './planning';
 import { plannedBlockMinutes } from './work-type';
 
@@ -242,6 +242,94 @@ describe('nominal durations', () => {
 });
 
 describe('planning heuristic', () => {
+  it('prioriza fechas de la semana y después cuadrante, fecha, antigüedad e ID sin NaN', () => {
+    const tasks = [
+      task({ id: 'z', important: true }),
+      task({ id: 'a', important: true }),
+      task({ id: 'old', important: true, processedAt: '2026-08-01' }),
+      task({ id: 'future-low', deadline: '2026-09-14' }),
+      task({ id: 'future-high', important: true, deadline: '2026-09-15' }),
+      task({ id: 'due-sunday', deadline: '2026-09-13' }),
+      task({ id: 'overdue', deadline: '2026-09-01' }),
+    ];
+    const expected = [
+      'overdue',
+      'due-sunday',
+      'future-high',
+      'old',
+      'a',
+      'z',
+      'future-low',
+    ];
+    expect(
+      sortPlanningCandidates(tasks, '2026-09-07').map((item) => item.id),
+    ).toEqual(expected);
+    expect(
+      sortPlanningCandidates([...tasks].reverse(), '2026-09-07').map(
+        (item) => item.id,
+      ),
+    ).toEqual(expected);
+  });
+
+  it('cuenta 60 ocupados y 30 libres en un slot de 90, ignorando cancelados y missed', () => {
+    const capacity = weekCapacity(
+      [slot()],
+      [
+        { slotId: 's1', status: 'planned', nominalMinutes: 30 },
+        { slotId: 's1', status: 'executed', nominalMinutes: 30 },
+        { slotId: 's1', status: 'cancelled', nominalMinutes: 30 },
+        { slotId: 's1', status: 'missed', nominalMinutes: 30 },
+      ],
+    );
+    expect(capacity).toMatchObject({
+      totalMinutes: 90,
+      occupiedMinutes: 60,
+      freeMinutes: 30,
+    });
+  });
+
+  it('valida lunes destino con el día de la instalación, incluido cambio de año', () => {
+    expect(reviewWeekStart('2026-12-31', '2027-01-04')).toBe('2027-01-04');
+    expect(reviewWeekStart('2026-09-11')).toBe('2026-09-07');
+    expect(() => reviewWeekStart('2026-09-11', '2026-09-15')).toThrow();
+    const clock = { now: () => new Date('2026-09-13T22:30:00Z') };
+    expect(reviewWeekStart(todayIso(clock, 'Europe/Madrid'))).toBe(
+      '2026-09-14',
+    );
+  });
+
+  it('permite varias reservas project y rechaza doble reserva no project', () => {
+    const context = {
+      today: '2026-09-07',
+      tasks: [task({ workType: 'project' })],
+      slots: [
+        slot({ id: 'p1', kind: 'project', durationMinutes: 120 }),
+        slot({ id: 'p2', kind: 'project', durationMinutes: 120 }),
+      ],
+      blocks: [],
+      hiddenTaskIds: new Set<string>(),
+      reservations: [
+        { taskId: 't1', slotId: 'p1' },
+        { taskId: 't1', slotId: 'p2' },
+      ],
+    };
+    expect(
+      proposePlan(context, 'proposal', 'w1', '2026-09-07').assignments,
+    ).toHaveLength(2);
+    expect(() =>
+      proposePlan(
+        {
+          ...context,
+          tasks: [task()],
+          slots: context.slots.map((item) => ({ ...item, kind: 'deep' })),
+        },
+        'p',
+        'w1',
+        '2026-09-07',
+      ),
+    ).toThrow();
+  });
+
   it('ordena por fecha, cuadrante y antigüedad y explica no colocadas', () => {
     const older = task({
       id: 'old',
@@ -280,7 +368,9 @@ describe('planning heuristic', () => {
       {
         today: '2026-09-03',
         tasks: [older, later, unavailable],
-        slots: [slot({ id: 'deep-1', kind: 'deep', durationMinutes: 90 })],
+        slots: [
+          slot({ id: 'deep-1', weekday: 4, kind: 'deep', durationMinutes: 90 }),
+        ],
         blocks: [],
         hiddenTaskIds: new Set(),
       },
