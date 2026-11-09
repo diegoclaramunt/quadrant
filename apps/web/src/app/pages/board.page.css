@@ -340,7 +340,7 @@ h2 {
   margin: auto auto 0;
 }
 .sheet::backdrop {
-  background: rgb(10 15 22 / 0.4);
+  background: var(--backdrop);
 }
 .sheet-in {
   background: var(--panel);

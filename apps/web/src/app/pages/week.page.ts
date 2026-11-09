@@ -39,7 +39,7 @@ import { workLabel, slotLabel, workHelp } from '../work-labels';
     }
     .day.selected {
       background: var(--accent);
-      color: white;
+      color: var(--on-accent);
     }
     .day small {
       font-size: 23px;
