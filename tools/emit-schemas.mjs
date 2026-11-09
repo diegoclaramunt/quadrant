@@ -454,6 +454,7 @@ const inputs = {
     properties: {
       categoryId: { type: 'string' },
       projectId: { type: 'string' },
+      status: { type: 'string', enum: ['backlog', 'completed'] },
     },
   },
   'task.get': {

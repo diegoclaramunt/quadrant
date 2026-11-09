@@ -8,9 +8,11 @@ import { TemplatesPage } from './pages/templates.page';
 import { ReportsPage } from './pages/reports.page';
 import { CatalogPage } from './pages/catalog.page';
 import { TodayPage } from './pages/today.page';
+import { BoardPage } from './pages/board.page';
 
 export const appRoutes: Route[] = [
-  { path: '', pathMatch: 'full', redirectTo: 'today' },
+  { path: '', pathMatch: 'full', redirectTo: 'board' },
+  { path: 'board', component: BoardPage },
   { path: 'today', component: TodayPage },
   { path: 'inbox', component: InboxPage },
   { path: 'process', component: ProcessPage },
@@ -20,4 +22,5 @@ export const appRoutes: Route[] = [
   { path: 'templates', component: TemplatesPage },
   { path: 'reports', component: ReportsPage },
   { path: 'catalog', component: CatalogPage },
+  { path: '**', redirectTo: 'board' },
 ];

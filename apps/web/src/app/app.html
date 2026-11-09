@@ -1,14 +1,20 @@
 <div class="shell">
   <header class="top">
-    <a routerLink="/today" class="brand"
-      ><span class="brand-mark" aria-hidden="true"
-        ><i></i><i></i><i></i><i></i></span
-      >Quadrant<span class="brand-period">.</span></a
+    <a routerLink="/board" class="brand" (click)="moreOpen = false"
+      ><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+        <rect x="1" y="1" width="8" height="8" rx="2" fill="var(--q1-ink)" />
+        <rect x="11" y="1" width="8" height="8" rx="2" fill="var(--q2-ink)" />
+        <rect x="1" y="11" width="8" height="8" rx="2" fill="var(--q3-ink)" />
+        <rect
+          x="11"
+          y="11"
+          width="8"
+          height="8"
+          rx="2"
+          fill="var(--q4-ink)"
+        /></svg
+      >Quadrant</a
     >
-    <p class="tagline">Un espacio para lo importante</p>
-    <app-capture-panel />
-  </header>
-  <div class="layout">
     <nav class="nav" aria-label="Principal">
       @for (link of primaryLinks; track link.path) {
       <a
@@ -16,43 +22,41 @@
         routerLinkActive="active"
         ariaCurrentWhenActive="page"
         (click)="moreOpen = false"
-        ><svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="link.icon" /></svg
         >{{ link.label }}</a
       >
       }
-      <button
-        class="nav-more"
-        type="button"
-        [attr.aria-expanded]="moreOpen"
-        aria-controls="secondary-navigation"
-        (click)="moreOpen = !moreOpen"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 11v2m7-2v2m7-2v2" /></svg
-        >Más
-      </button>
-      @if (moreOpen) {
-      <div
-        id="secondary-navigation"
-        class="secondary-nav"
-        aria-label="Navegación secundaria"
-        (keydown.escape)="moreOpen = false"
-      >
-        @for (link of secondaryLinks; track link.path) {
-        <a
-          [routerLink]="link.path"
-          routerLinkActive="active"
-          (click)="moreOpen = false"
-          >{{ link.label }}</a
+      <div class="more">
+        <button
+          class="nav-more"
+          type="button"
+          [attr.aria-expanded]="moreOpen"
+          aria-controls="planning-navigation"
+          (click)="moreOpen = !moreOpen"
         >
+          Más
+        </button>
+        @if (moreOpen) {
+        <div
+          id="planning-navigation"
+          class="more-menu"
+          tabindex="-1"
+          (keydown.escape)="moreOpen = false"
+        >
+          <span class="more-title">Planificación semanal</span>
+          @for (link of planningLinks; track link.path) {
+          <a
+            [routerLink]="link.path"
+            routerLinkActive="active"
+            (click)="moreOpen = false"
+            >{{ link.label }}</a
+          >
+          }
+        </div>
         }
-        <a routerLink="/process" routerLinkActive="active">Procesar bandeja</a>
       </div>
-      }
     </nav>
-    <main class="main">
-      <router-outlet />
-    </main>
-  </div>
+  </header>
+  <main class="main">
+    <router-outlet />
+  </main>
 </div>

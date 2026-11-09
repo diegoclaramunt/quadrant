@@ -538,6 +538,13 @@ export const schemaDocuments: Record<string, unknown> = {
       },
       "projectId": {
         "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "backlog",
+          "completed"
+        ]
       }
     }
   },

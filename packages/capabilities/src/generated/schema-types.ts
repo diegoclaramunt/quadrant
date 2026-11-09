@@ -4,6 +4,7 @@
 export interface HttpsQuadrantLocalSchemasBacklogListInputJson {
   categoryId?: string;
   projectId?: string;
+  status?: "backlog" | "completed";
 }
 
 // backlog.list.output.json

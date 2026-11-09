@@ -128,11 +128,16 @@ export function visibleInbox(repos: QuadrantRepositories) {
 
 export function visibleBacklog(
   repos: QuadrantRepositories,
-  filters: { categoryId?: string; projectId?: string } = {},
+  filters: {
+    categoryId?: string;
+    projectId?: string;
+    status?: 'backlog' | 'completed';
+  } = {},
 ) {
+  const status = filters.status ?? 'backlog';
   return repos.tasks
     .list()
-    .filter((task) => task.status === 'backlog')
+    .filter((task) => task.status === status)
     .map((task) => presentTask(task, repos))
     .filter((task) => !task.hidden)
     .filter(

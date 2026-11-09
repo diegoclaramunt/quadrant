@@ -1,6 +1,8 @@
 # Quadrant
 
-Captura, priorización y planificación por bloques. MVP local-first.
+Captura y priorización de tareas en una matriz de Eisenhower. La pantalla principal es el tablero (`/board`): una línea por tarea, sin fechas, y luego se coloca en su cuadrante (arrastrando, teclas 1–4 o tocándola). La planificación semanal por bloques sigue disponible en «Más».
+
+Prototipo aprobado el 9-11-2026: https://claude.ai/artifact/2EphBG4BKm8KA4obCGQ2JB
 
 Spec: `docs/specs/2026-09-03-quadrant-mvp.md`.
 

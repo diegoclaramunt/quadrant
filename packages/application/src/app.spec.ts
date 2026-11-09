@@ -156,6 +156,69 @@ describe('Quadrant application', () => {
     ).toBe(true);
   });
 
+  it('la captura sin procesar conserva el proyecto indicado', () => {
+    const quadrant = app();
+    const category = result<{ category: { id: string } }>(
+      quadrant.invoke('category.create', { name: 'General' }),
+    );
+    const project = result<{ project: { id: string } }>(
+      quadrant.invoke('project.create', {
+        name: 'warpcom',
+        categoryId: category.category.id,
+      }),
+    );
+    const captured = result<{
+      tasks: Array<{ status: string; projectId: string | null }>;
+    }>(
+      quadrant.invoke('inbox.capture_many', {
+        items: [
+          { title: 'Revisar PR', channel: 'ui', projectId: project.project.id },
+        ],
+      }),
+    );
+    expect(captured.tasks[0]).toMatchObject({
+      status: 'inbox',
+      projectId: project.project.id,
+    });
+  });
+
+  it('lista las tareas completadas aparte del backlog', () => {
+    const quadrant = app();
+    const captured = result<{ tasks: Array<{ id: string }> }>(
+      quadrant.invoke('inbox.capture_many', {
+        items: [
+          {
+            title: 'Hecha',
+            channel: 'ui',
+            alreadyProcessed: true,
+            urgent: true,
+            important: true,
+            workType: 'short',
+          },
+          {
+            title: 'Abierta',
+            channel: 'ui',
+            alreadyProcessed: true,
+            urgent: false,
+            important: true,
+            workType: 'short',
+          },
+        ],
+      }),
+    );
+    result(quadrant.invoke('task.complete', { taskId: captured.tasks[0].id }));
+    const open = result<{ tasks: Array<{ title: string }> }>(
+      quadrant.invoke('backlog.list', {}),
+    );
+    const done = result<{ tasks: Array<{ title: string; status: string }> }>(
+      quadrant.invoke('backlog.list', { status: 'completed' }),
+    );
+    expect(open.tasks.map((t) => t.title)).toEqual(['Abierta']);
+    expect(done.tasks.map((t) => [t.title, t.status])).toEqual([
+      ['Hecha', 'completed'],
+    ]);
+  });
+
   it('idempotencia y conflicto de request_id', () => {
     const quadrant = app();
     const first = quadrant.invoke('inbox.capture_many', {

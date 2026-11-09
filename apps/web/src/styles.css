@@ -1,20 +1,30 @@
 :root {
   color-scheme: light;
-  --bg: #f7f8f5;
+  --bg: #f3f5f7;
   --panel: #ffffff;
-  --text: #25342e;
-  --muted: #69746d;
-  --line: #e3e7df;
-  --accent: #285b46;
-  --accent-soft: #e8efe6;
-  --surface-subtle: #eff2ec;
-  --danger: #a13d34;
-  --q1: #fae9e4;
-  --q2: #e8efdf;
-  --q3: #f6eedc;
-  --q4: #ebedf0;
-  --shadow: 0 4px 24px rgb(36 52 42 / 0.045);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --text: #17202b;
+  --muted: #5b6673;
+  --line: #d9dfe5;
+  --line-strong: #c3ccd5;
+  --grid: #e7ebef;
+  --accent: #2b59c3;
+  --accent-soft: #e9effb;
+  --surface-subtle: #eef1f4;
+  --danger: #b33a24;
+  --q1: #fbece8;
+  --q2: #e9effb;
+  --q3: #f8f0de;
+  --q4: #eef0f2;
+  --q1-ink: #c8432b;
+  --q2-ink: #2b59c3;
+  --q3-ink: #a86b00;
+  --q4-ink: #6b7682;
+  --toast-link: #9ab8f5;
+  --shadow: 0 1px 2px rgb(23 32 43 / 0.06), 0 6px 20px rgb(23 32 43 / 0.07);
+  --f-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --f-body: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', monospace;
+  font-family: var(--f-body);
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
 }
@@ -34,12 +44,11 @@ p {
   margin: 0;
 }
 h1 {
-  font-family:
-    'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
-  font-size: clamp(44px, 5vw, 68px);
-  font-weight: 400;
+  font-family: var(--f-display);
+  font-size: clamp(30px, 4vw, 40px);
+  font-weight: 700;
   line-height: 1.12;
-  letter-spacing: -2px;
+  letter-spacing: -0.5px;
   margin-bottom: 10px;
 }
 h2 {
@@ -99,7 +108,7 @@ button:disabled {
   box-shadow: none;
 }
 :is(button, input, select, textarea, a, summary):focus-visible {
-  outline: 3px solid #7a9d73;
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 .stack {

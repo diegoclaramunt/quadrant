@@ -36,6 +36,7 @@ export interface TaskView {
   consecutivePostponements: number;
   suggestArchive: boolean;
   hidden: boolean;
+  completedAt?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

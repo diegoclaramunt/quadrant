@@ -232,6 +232,7 @@ export class QuadrantApp {
           tasks: visibleBacklog(repos, {
             categoryId: body.categoryId as string | undefined,
             projectId: body.projectId as string | undefined,
+            status: body.status as 'backlog' | 'completed' | undefined,
           }),
         });
       case 'task.get':
@@ -354,6 +355,9 @@ export class QuadrantApp {
         completedAt: null,
         archivedAt: null,
       };
+      if (!item.alreadyProcessed && (item.projectId || item.categoryId)) {
+        task = this.assignProjectOrCategory(task, item, repos);
+      }
       if (item.alreadyProcessed) {
         task = this.applyClassification(task, item, repos, nowIso);
         task.status = 'backlog';
