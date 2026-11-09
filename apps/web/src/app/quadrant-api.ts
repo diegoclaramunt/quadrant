@@ -1,6 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
+import type { OperationManifest } from '@five/voice-runtime/core';
+import type { VoiceCaptureInput } from '@quadrant/capabilities';
 
 export interface Envelope<T = unknown> {
   status:
@@ -41,14 +43,36 @@ export interface TaskView {
 @Injectable({ providedIn: 'root' })
 export class QuadrantApi {
   private readonly http = inject(HttpClient);
+  private readonly captured = new Subject<void>();
+  readonly captures$ = this.captured.asObservable();
+
+  voiceManifest() {
+    return firstValueFrom(
+      this.http.get<OperationManifest>('/api/voice/manifest'),
+    );
+  }
+
+  async captureVoice(requestId: string, args: VoiceCaptureInput) {
+    const result = await firstValueFrom(
+      this.http.post<Envelope<{ tasks: TaskView[] }>>('/api/voice/capture', {
+        requestId,
+        arguments: args,
+      }),
+    );
+    if (result.status === 'ok') this.captured.next();
+    return result;
+  }
 
   async invoke<T>(
     id: string,
     payload: Record<string, unknown> = {},
   ): Promise<Envelope<T>> {
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.http.post<Envelope<T>>(`/api/capabilities/${id}`, payload),
     );
+    if (id === 'inbox.capture_many' && result.status === 'ok')
+      this.captured.next();
+    return result;
   }
 
   async confirm<T>(

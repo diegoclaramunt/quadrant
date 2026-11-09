@@ -15,6 +15,10 @@ module.exports = {
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',
+      // Bundle the ESM-only runtime into this CommonJS server; keep other packages external.
+      externalDependencies: Object.keys(
+        require('../../package.json').dependencies,
+      ).filter((name) => name !== '@five/voice-runtime'),
       compiler: 'tsc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',

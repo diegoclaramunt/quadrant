@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { QuadrantApi, type TaskView } from '../quadrant-api';
 
@@ -70,6 +71,9 @@ export class InboxPage {
   protected readonly error = signal('');
 
   constructor() {
+    this.api.captures$
+      .pipe(takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe(() => void this.reload());
     void this.reload();
   }
 

@@ -1,0 +1,14 @@
+{
+  "environment": "SQLite in memory; OpenAI key empty; no provider call",
+  "checks": {
+    "manifest": true,
+    "capture": true,
+    "voice_inbox": true,
+    "details": true,
+    "idempotency": true,
+    "no_duplicates": true,
+    "no_classification": true,
+    "missing_key": true,
+    "origin_check": true
+  }
+}

@@ -7,10 +7,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { QuadrantApi } from './quadrant-api';
+import { VoiceCapture } from './voice-capture';
+import { VoiceCaptureService } from './voice-capture.service';
 
 @Component({
   selector: 'app-capture-panel',
-  imports: [FormsModule],
+  imports: [FormsModule, VoiceCapture],
   template: `
     <button
       type="button"
@@ -27,6 +29,7 @@ import { QuadrantApi } from './quadrant-api';
       (cancel)="cancel($event)"
     >
       <h2 id="capture-title">Capturar en bandeja</h2>
+      <app-voice-capture />
       <p class="muted">Una línea por idea. La clasificación se hace después.</p>
       <form class="stack" (submit)="capture($event)">
         <label
@@ -61,6 +64,7 @@ import { QuadrantApi } from './quadrant-api';
 })
 export class CapturePanel {
   private readonly api = inject(QuadrantApi);
+  private readonly voice = inject(VoiceCaptureService);
   private readonly dialog =
     viewChild.required<ElementRef<HTMLDialogElement>>('captureDialog');
   protected readonly draft = signal('');
@@ -74,10 +78,14 @@ export class CapturePanel {
     this.message.set('');
   }
   close() {
-    if (!this.busy()) this.dialog().nativeElement.close();
+    if (!this.busy()) {
+      this.voice.stop();
+      this.dialog().nativeElement.close();
+    }
   }
   cancel(event: Event) {
     if (this.busy()) event.preventDefault();
+    else this.voice.stop();
   }
   async capture(event: Event) {
     event.preventDefault();

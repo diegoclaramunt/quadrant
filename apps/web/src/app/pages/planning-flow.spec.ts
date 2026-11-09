@@ -29,6 +29,27 @@ function task(id: string, extra: Partial<TaskView> = {}): TaskView {
 }
 
 describe('flujo de planificación realista', () => {
+  // jsdom lacks native dialog methods. Assert calls/open state; real browser
+  // focus trapping and top-layer positioning need browser validation.
+  beforeAll(() => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value: function (this: HTMLDialogElement) {
+        this.setAttribute('open', '');
+      },
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value: function (this: HTMLDialogElement) {
+        this.removeAttribute('open');
+      },
+    });
+  });
+  afterAll(() => {
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
+  });
+
   it('muestra la capacidad libre de un bloque compartido sin contar cancelados', async () => {
     TestBed.configureTestingModule({
       imports: [WeekPage],
@@ -342,11 +363,13 @@ describe('flujo de planificación realista', () => {
     await fixture.whenStable();
     expect(root.querySelector('[aria-label="Propuesta"]')).not.toBeNull();
     expect(
-      root.querySelector('[aria-label="Confirmar acción"]'),
+      root.querySelector('dialog[open][aria-label="Confirmar acción"]'),
     ).not.toBeNull();
     button('Confirmar').click();
     await fixture.whenStable();
-    expect(root.querySelector('[aria-label="Confirmar acción"]')).toBeNull();
+    expect(
+      root.querySelector('dialog[open][aria-label="Confirmar acción"]'),
+    ).toBeNull();
     button('Quitar reserva').click();
     await fixture.whenStable();
     expect(root.querySelector('[aria-label="Propuesta"]')).toBeNull();
@@ -357,6 +380,156 @@ describe('flujo de planificación realista', () => {
         'reservations'
       ],
     ).toEqual([]);
+    fixture.destroy();
+  });
+  it('el domingo muestra confirmación modal, permite cancelar y abre la siguiente semana solo tras confirmar', async () => {
+    let week = {
+      id: 'current',
+      weekStart: '2026-08-31',
+      status: 'open',
+      today: '2026-09-06',
+      timezone: 'Europe/Madrid',
+      slots: [],
+      blocks: [],
+    };
+    const requests: Record<string, unknown>[] = [];
+    const confirmed: { body: Record<string, unknown>; token: string }[] = [];
+    let failure = true;
+    TestBed.configureTestingModule({
+      imports: [WeekPage],
+      providers: [
+        {
+          provide: QuadrantApi,
+          useValue: {
+            invoke: async (id: string, body: Record<string, unknown>) => {
+              if (id === 'week.current')
+                return { status: 'ok', result: { week } };
+              if (id === 'backlog.list')
+                return { status: 'ok', result: { tasks: [] } };
+              requests.push(body);
+              return {
+                status: 'needs_confirmation',
+                confirmation_token: 'review-token',
+                summary:
+                  'Cerrar 2026-08-31. Abrir del 2026-09-07 al 2026-09-13. Bloques pendientes no realizados.',
+              };
+            },
+            confirm: async (
+              _id: string,
+              body: Record<string, unknown>,
+              token: string,
+            ) => {
+              confirmed.push({ body, token });
+              if (failure)
+                return {
+                  status: 'conflict',
+                  error: { message: 'No se pudo abrir la semana' },
+                };
+              week = { ...week, id: 'next', weekStart: '2026-09-07' };
+              return { status: 'ok', result: { week } };
+            },
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(WeekPage);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const button = (label: string, within: HTMLElement = root) => {
+      const found = Array.from(within.querySelectorAll('button')).find(
+        (item) => item.textContent?.trim() === label,
+      );
+      if (!found) throw new Error(`Botón no encontrado: ${label}`);
+      return found;
+    };
+    button('Planificar semana').click();
+    await fixture.whenStable();
+    button('Revisar y abrir semana elegida').click();
+    await fixture.whenStable();
+    const dialog = root.querySelector('dialog');
+    if (!dialog) throw new Error('Falta diálogo');
+    expect(dialog.open).toBe(true);
+    expect(dialog.textContent).toContain('2026-09-07');
+    expect(requests[0]['targetWeekStart']).toBe('2026-09-07');
+    expect(confirmed).toHaveLength(0);
+    button('Cancelar', dialog).click();
+    await fixture.whenStable();
+    expect(dialog.open).toBe(false);
+    expect(confirmed).toHaveLength(0);
+    button('Revisar y abrir semana elegida').click();
+    await fixture.whenStable();
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await fixture.whenStable();
+    expect(dialog.open).toBe(false);
+    expect(confirmed).toHaveLength(0);
+    button('Revisar y abrir semana elegida').click();
+    await fixture.whenStable();
+    button('Confirmar', dialog).click();
+    await fixture.whenStable();
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector('[role=alert]')?.textContent).toContain(
+      'No se pudo abrir la semana',
+    );
+    expect(root.querySelector('[role=status]')).toBeNull();
+    failure = false;
+    button('Confirmar', dialog).click();
+    await fixture.whenStable();
+    expect(confirmed[1]).toEqual(confirmed[0]);
+    expect(confirmed[1]).toEqual({ body: requests[2], token: 'review-token' });
+    expect(dialog.open).toBe(false);
+    expect(root.querySelector('[role=status]')?.textContent).toContain(
+      '7 sept',
+    );
+    expect(root.querySelector('[role=status]')?.textContent).toContain(
+      '13 sept',
+    );
+    expect(
+      root.querySelector<HTMLElement>('[aria-label=Disponibilidad]')?.hidden,
+    ).toBe(false);
+    expect(
+      root.querySelector('[aria-pressed=true]')?.getAttribute('aria-label'),
+    ).toContain('Lunes 7 sept');
+    fixture.destroy();
+  });
+
+  it('muestra un error si la confirmación del servidor llega sin token', async () => {
+    TestBed.configureTestingModule({
+      imports: [WeekPage],
+      providers: [
+        {
+          provide: QuadrantApi,
+          useValue: {
+            invoke: async (id: string) => {
+              if (id === 'week.current')
+                return {
+                  status: 'ok',
+                  result: {
+                    week: {
+                      id: 'w',
+                      weekStart: '2026-08-31',
+                      today: '2026-09-06',
+                      slots: [],
+                      blocks: [],
+                    },
+                  },
+                };
+              if (id === 'backlog.list')
+                return { status: 'ok', result: { tasks: [] } };
+              return { status: 'needs_confirmation' };
+            },
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(WeekPage);
+    await fixture.whenStable();
+    await fixture.componentInstance.review();
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[role=alert]')?.textContent).toContain(
+      'No se pudo confirmar',
+    );
+    expect(root.querySelector('dialog')?.open).toBe(false);
     fixture.destroy();
   });
 });

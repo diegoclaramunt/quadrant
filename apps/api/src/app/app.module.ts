@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { createQuadrantApp, QuadrantApp } from '@quadrant/application';
 import { openStore } from '@quadrant/storage';
 import { AppController } from './app.controller';
+import { VoiceController } from './voice.controller';
 
 @Module({
   imports: [],
-  controllers: [AppController],
+  controllers: [AppController, VoiceController],
   providers: [
     {
       provide: QuadrantApp,
