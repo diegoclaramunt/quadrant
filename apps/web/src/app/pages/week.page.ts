@@ -1,4 +1,12 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  computed,
+  afterRenderEffect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { addDays, isoWeekday, mondayOf, weekCapacity } from '@quadrant/domain';
 import type {
@@ -71,6 +79,12 @@ import { workLabel, slotLabel, workHelp } from '../work-labels';
           {{ planning() ? 'Volver a mi semana' : 'Planificar semana' }}
         </button>
       </header>
+      @if (notice()) {
+        <p class="notice" role="status">{{ notice() }}</p>
+      }
+      @if (error() && !confirmation()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
       <nav
         class="stepper"
         aria-label="Etapas de planificación"
@@ -518,41 +532,54 @@ import { workLabel, slotLabel, workHelp } from '../work-labels';
           </button>
         </section>
       }
-      @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
-      }
-      @if (confirmation(); as pending) {
-        <div
-          class="dialog-inline"
-          role="alertdialog"
-          aria-label="Confirmar acción"
-        >
-          <strong>Confirmar acción</strong>
-          <p>{{ pending.summary }}</p>
+      <dialog
+        #confirmationDialog
+        class="dialog stack"
+        aria-label="Confirmar acción"
+        aria-describedby="week-confirmation-summary"
+        [attr.aria-busy]="busy()"
+        (cancel)="cancelConfirmation($event)"
+      >
+        @if (confirmation(); as pending) {
+          <h2>
+            {{
+              pending.id === 'week.review'
+                ? 'Cerrar y cambiar de semana'
+                : 'Confirmar acción'
+            }}
+          </h2>
+          <p id="week-confirmation-summary">{{ pending.summary }}</p>
+          @if (error()) {
+            <p class="error" role="alert">{{ error() }}</p>
+          }
           <div class="row">
             <button
               type="button"
               [disabled]="busy()"
               (click)="confirmPending()"
             >
-              Confirmar
+              {{ busy() ? 'Aplicando…' : 'Confirmar' }}
             </button>
             <button
               type="button"
               class="secondary"
+              autofocus
               [disabled]="busy()"
-              (click)="confirmation.set(null)"
+              (click)="cancelConfirmation()"
             >
               Cancelar
             </button>
           </div>
-        </div>
-      }
+        }
+      </dialog>
     </section>
   `,
 })
 export class WeekPage {
   private readonly api = inject(QuadrantApi);
+  private readonly confirmationDialog =
+    viewChild<ElementRef<HTMLDialogElement>>('confirmationDialog');
+  protected readonly notice = signal('');
   protected readonly week = signal<WeekResult['week'] | null>(null);
   protected readonly backlog = signal<TaskView[]>([]);
   protected readonly selectedDay = signal(1);
@@ -618,6 +645,13 @@ export class WeekPage {
   );
 
   constructor() {
+    afterRenderEffect(() => {
+      const dialog = this.confirmationDialog()?.nativeElement;
+      const pending = this.confirmation();
+      if (!dialog) return;
+      if (pending && !dialog.open) dialog.showModal();
+      else if (!pending && dialog.open) dialog.close();
+    });
     void this.reload();
   }
   slotsFor(day: number) {
@@ -842,10 +876,17 @@ export class WeekPage {
   async cancel(blockId: string) {
     await this.mutate('block.cancel', { blockId });
   }
+  cancelConfirmation(event?: Event) {
+    event?.preventDefault();
+    if (this.busy()) return;
+    this.confirmation.set(null);
+    this.error.set('');
+  }
   async confirmPending() {
     const pending = this.confirmation();
     if (!pending || this.busy()) return;
     this.busy.set(true);
+    this.error.set('');
     try {
       const envelope = await this.api.confirm(
         pending.id,
@@ -859,6 +900,14 @@ export class WeekPage {
       this.confirmation.set(null);
       this.error.set('');
       await this.reload();
+      if (pending.id === 'week.review') {
+        this.planning.set(true);
+        this.stage.set('availability');
+        this.selectedDay.set(1);
+        this.notice.set(
+          `Semana abierta: ${this.shortDate(1)} — ${this.shortDate(7)}. Ya puedes planificarla.`,
+        );
+      }
     } catch {
       this.error.set('No se pudo conectar con Quadrant.');
     } finally {
@@ -866,8 +915,12 @@ export class WeekPage {
     }
   }
   private showError(envelope: Envelope) {
-    if (envelope.status !== 'needs_confirmation')
-      this.error.set(envelope.error?.message ?? 'Operación no aplicada');
+    this.error.set(
+      envelope.error?.message ??
+        (envelope.status === 'needs_confirmation'
+          ? 'No se pudo confirmar la operación. Cancela y vuelve a intentarlo.'
+          : 'Operación no aplicada'),
+    );
   }
   private async mutate(
     id: string,
@@ -875,6 +928,8 @@ export class WeekPage {
   ): Promise<boolean> {
     if (this.busy()) return false;
     this.busy.set(true);
+    this.error.set('');
+    this.notice.set('');
     try {
       const request = {
         ...payload,
