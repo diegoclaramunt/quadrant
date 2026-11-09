@@ -26,6 +26,19 @@ npm run serve:web
 
 La web queda en `http://localhost:4200` y proxifica `/api` hacia `http://localhost:3000`.
 
+## En el servidor de casa (truenas)
+
+Stack de Dockge en `/mnt/data/apps/dockge/stacks/quadrant` (remoto git `truenas`, con `updateInstead`).
+Un solo contenedor sirve la web y la API en http://192.168.1.38:3360; la base SQLite vive en
+`/mnt/data/apps/quadrant/data`. Desplegar:
+
+```bash
+git push truenas main
+ssh truenas 'cd /mnt/data/apps/dockge/stacks/quadrant && sudo docker compose up -d --build --wait'
+```
+
+La captura por voz está aparcada en la rama `voz-aparcada`; `main` no la incluye.
+
 Servidor MCP (stdio):
 
 ```bash

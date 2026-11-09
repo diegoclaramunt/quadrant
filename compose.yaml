@@ -1,0 +1,17 @@
+# Stack de Dockge en truenas: /mnt/data/apps/dockge/stacks/quadrant
+services:
+  quadrant:
+    build: .
+    image: quadrant:local
+    container_name: quadrant
+    restart: unless-stopped
+    user: "3000:3000"
+    ports:
+      - "3360:3360"
+    volumes:
+      - /mnt/data/apps/quadrant/data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3360/api/manifest').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
