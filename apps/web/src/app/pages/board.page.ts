@@ -318,6 +318,15 @@ function writeFilter(value: string | null) {
         >
           <b>Hecha</b><small>Se puede deshacer</small>
         </div>
+        <div
+          class="zone cancel"
+          [class.over]="overZone() === 'cancel'"
+          (dragover)="dragOver($event, 'cancel')"
+          (dragleave)="dragLeave($event, 'cancel')"
+          (drop)="$event.preventDefault(); dragEnd()"
+        >
+          <b>Cancelar</b>
+        </div>
       </div>
     }
 

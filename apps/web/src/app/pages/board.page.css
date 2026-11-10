@@ -330,34 +330,41 @@ h2 {
   gap: 2px;
 }
 
-/* Panel de arrastre: fijo sobre la pantalla, sin desplazarse. */
+/* Panel de arrastre: compacto y centrado; el tablero se sigue viendo alrededor. */
 .dock {
   position: fixed;
-  inset: 0;
   z-index: 15;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, calc(100vw - 32px));
+  height: min(400px, calc(100dvh - 32px));
   display: grid;
-  grid-template-columns: minmax(90px, 0.6fr) minmax(0, 3fr) minmax(90px, 0.6fr);
-  gap: 12px;
-  padding: calc(16px + env(safe-area-inset-top, 0px))
-    max(16px, env(safe-area-inset-right, 0px))
-    calc(16px + env(safe-area-inset-bottom, 0px))
-    max(16px, env(safe-area-inset-left, 0px));
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(3px);
+  grid-template-columns: 96px minmax(0, 1fr) 96px;
+  grid-template-rows: minmax(0, 1fr) 44px;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 10px 40px rgb(10 15 22 / 0.18),
+    0 2px 6px rgb(10 15 22 / 0.08);
 }
 .dock-matrix {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 12px;
+  gap: 8px;
 }
 .zone {
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 4px;
+  gap: 2px;
+  padding: 6px;
   text-align: center;
-  border-radius: 14px;
+  border-radius: 10px;
   border: 2px dashed var(--qc, var(--line-strong));
   background: var(--qbg, var(--panel));
   color: var(--qc, var(--text));
@@ -366,24 +373,41 @@ h2 {
     box-shadow 0.1s;
 }
 .zone b {
-  font: 700 clamp(18px, 2.4vw, 26px) var(--f-display);
+  font: 700 17px var(--f-display);
 }
 .zone small {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 .zone.over {
   border-style: solid;
   box-shadow: 0 0 0 3px var(--qc, var(--line-strong)) inset;
-  transform: scale(1.015);
+  transform: scale(1.02);
 }
+/* Borrar: papelera en tinta, para no confundirla con «Hacer ya». */
 .zone.trash {
-  --qc: var(--danger);
-  --qbg: var(--q1);
+  --qc: var(--text);
+  --qbg: var(--surface-subtle);
+}
+.zone.trash.over {
+  background: var(--text);
+  color: var(--panel);
+}
+.zone.trash.over small {
+  color: var(--panel);
 }
 .zone.finish {
   --qc: var(--ok);
   --qbg: var(--ok-bg);
+}
+.zone.cancel {
+  grid-column: 1 / -1;
+  --qc: var(--line-strong);
+  --qbg: transparent;
+  color: var(--muted);
+}
+.zone.cancel b {
+  font: 500 14px var(--f-body);
 }
 .toast {
   position: fixed;
@@ -512,7 +536,7 @@ h2 {
   }
   .dock {
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 3fr 1fr;
+    grid-template-rows: minmax(0, 3fr) minmax(0, 1fr) 44px;
   }
   .dock-matrix {
     grid-column: 1 / -1;
