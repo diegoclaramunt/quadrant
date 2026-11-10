@@ -198,71 +198,121 @@ function writeFilter(value: string | null) {
         </div>
       </section>
 
-      <div class="matrix-wrap" #matrixWrap [class.hidden-for-drag]="dragging()">
-        <div class="axis-x" aria-hidden="true">
-          <span>Urgente →</span><span>Sin prisa</span>
-        </div>
-        <div class="axis-y" aria-hidden="true">
-          <span>Menos importante</span><span>Importante ↑</span>
-        </div>
-        <div class="matrix">
-          @for (q of quadrants; track q.id) {
-            <section
-              class="q"
-              [attr.data-q]="q.id"
-              [class.over]="overZone() === q.id"
-              [class.target]="!!selected()"
-              [attr.aria-label]="q.name"
-              [attr.tabindex]="selected() ? 0 : -1"
-              (click)="dropSelected(q.id)"
-              (keydown.enter)="dropSelected(q.id)"
-              (dragover)="dragOver($event, q.id)"
-              (dragleave)="dragLeave($event, q.id)"
-              (drop)="drop($event, q.id)"
-            >
-              <div class="q-head">
-                <h2>{{ q.name }}</h2>
-                <span class="key">{{ q.key }}</span>
-                <span class="n">{{ byQuadrant(q.id).length }}</span>
-              </div>
-              <div class="q-sub">{{ q.sub }}</div>
-              @if (byQuadrant(q.id).length) {
-                <ul>
-                  @for (t of byQuadrant(q.id); track t.id) {
-                    <li
-                      class="task"
-                      draggable="true"
-                      [class.done]="pendingDone().has(t.id)"
-                      (dragstart)="dragStart($event, t.id)"
-                      (dragend)="dragEnd()"
-                    >
-                      <button
-                        type="button"
-                        class="check"
-                        [attr.aria-label]="'Marcar hecha: ' + t.title"
-                        (click)="$event.stopPropagation(); complete(t)"
-                      ></button>
-                      <span
-                        role="button"
-                        tabindex="0"
-                        class="t"
-                        (click)="$event.stopPropagation(); open(t)"
-                        (keydown.enter)="$event.stopPropagation(); open(t)"
+      <div class="matrix-slot">
+        <div class="matrix-wrap" [class.hidden-for-drag]="dragging()">
+          <div class="axis-x" aria-hidden="true">
+            <span>Urgente →</span><span>Sin prisa</span>
+          </div>
+          <div class="axis-y" aria-hidden="true">
+            <span>Menos importante</span><span>Importante ↑</span>
+          </div>
+          <div class="matrix">
+            @for (q of quadrants; track q.id) {
+              <section
+                class="q"
+                [attr.data-q]="q.id"
+                [class.over]="overZone() === q.id"
+                [class.target]="!!selected()"
+                [attr.aria-label]="q.name"
+                [attr.tabindex]="selected() ? 0 : -1"
+                (click)="dropSelected(q.id)"
+                (keydown.enter)="dropSelected(q.id)"
+                (dragover)="dragOver($event, q.id)"
+                (dragleave)="dragLeave($event, q.id)"
+                (drop)="drop($event, q.id)"
+              >
+                <div class="q-head">
+                  <h2>{{ q.name }}</h2>
+                  <span class="key">{{ q.key }}</span>
+                  <span class="n">{{ byQuadrant(q.id).length }}</span>
+                </div>
+                <div class="q-sub">{{ q.sub }}</div>
+                @if (byQuadrant(q.id).length) {
+                  <ul>
+                    @for (t of byQuadrant(q.id); track t.id) {
+                      <li
+                        class="task"
+                        draggable="true"
+                        [class.done]="pendingDone().has(t.id)"
+                        (dragstart)="dragStart($event, t.id)"
+                        (dragend)="dragEnd()"
                       >
-                        {{ t.title }}
-                      </span>
-                      @if (projectName(t); as name) {
-                        <span class="proj">#{{ name }}</span>
-                      }
-                    </li>
-                  }
-                </ul>
-              } @else {
-                <div class="q-empty">Vacío</div>
-              }
-            </section>
-          }
+                        <button
+                          type="button"
+                          class="check"
+                          [attr.aria-label]="'Marcar hecha: ' + t.title"
+                          (click)="$event.stopPropagation(); complete(t)"
+                        ></button>
+                        <span
+                          role="button"
+                          tabindex="0"
+                          class="t"
+                          (click)="$event.stopPropagation(); open(t)"
+                          (keydown.enter)="$event.stopPropagation(); open(t)"
+                        >
+                          {{ t.title }}
+                        </span>
+                        @if (projectName(t); as name) {
+                          <span class="proj">#{{ name }}</span>
+                        }
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <div class="q-empty">Vacío</div>
+                }
+              </section>
+            }
+          </div>
         </div>
+
+        @if (dragging()) {
+          <div class="dock" aria-hidden="true">
+            <div
+              class="zone side trash"
+              [class.over]="overZone() === 'trash'"
+              (dragover)="dragOver($event, 'trash')"
+              (dragleave)="dragLeave($event, 'trash')"
+              (drop)="dropAction($event, 'trash')"
+            >
+              <b>Borrar</b><small>Se puede deshacer</small>
+            </div>
+            <div class="dock-matrix">
+              @for (q of quadrants; track q.id) {
+                <div
+                  class="zone"
+                  [attr.data-q]="q.id"
+                  [class.over]="overZone() === 'dock-' + q.id"
+                  (dragover)="dragOver($event, 'dock-' + q.id)"
+                  (dragleave)="dragLeave($event, 'dock-' + q.id)"
+                  (drop)="drop($event, q.id)"
+                >
+                  <b>{{ q.name }}</b
+                  ><small>{{ q.sub }}</small>
+                  <span class="key">{{ q.key }}</span>
+                </div>
+              }
+            </div>
+            <div
+              class="zone side finish"
+              [class.over]="overZone() === 'done'"
+              (dragover)="dragOver($event, 'done')"
+              (dragleave)="dragLeave($event, 'done')"
+              (drop)="dropAction($event, 'done')"
+            >
+              <b>Hecha</b><small>Se puede deshacer</small>
+            </div>
+            <div
+              class="zone cancel"
+              [class.over]="overZone() === 'cancel'"
+              (dragover)="dragOver($event, 'cancel')"
+              (dragleave)="dragLeave($event, 'cancel')"
+              (drop)="$event.preventDefault(); dragEnd()"
+            >
+              <b>Cancelar</b>
+            </div>
+          </div>
+        }
       </div>
 
       <details class="done-log" (toggle)="loadDone($event)">
@@ -281,61 +331,6 @@ function writeFilter(value: string | null) {
         </ul>
       </details>
     </section>
-
-    @if (dragging()) {
-      <div
-        class="dock"
-        aria-hidden="true"
-        [style.left.px]="dockRect().left"
-        [style.top.px]="dockRect().top"
-        [style.width.px]="dockRect().width"
-        [style.height.px]="dockRect().height"
-      >
-        <div
-          class="zone side trash"
-          [class.over]="overZone() === 'trash'"
-          (dragover)="dragOver($event, 'trash')"
-          (dragleave)="dragLeave($event, 'trash')"
-          (drop)="dropAction($event, 'trash')"
-        >
-          <b>Borrar</b><small>Se puede deshacer</small>
-        </div>
-        <div class="dock-matrix">
-          @for (q of quadrants; track q.id) {
-            <div
-              class="zone"
-              [attr.data-q]="q.id"
-              [class.over]="overZone() === 'dock-' + q.id"
-              (dragover)="dragOver($event, 'dock-' + q.id)"
-              (dragleave)="dragLeave($event, 'dock-' + q.id)"
-              (drop)="drop($event, q.id)"
-            >
-              <b>{{ q.name }}</b
-              ><small>{{ q.sub }}</small>
-              <span class="key">{{ q.key }}</span>
-            </div>
-          }
-        </div>
-        <div
-          class="zone side finish"
-          [class.over]="overZone() === 'done'"
-          (dragover)="dragOver($event, 'done')"
-          (dragleave)="dragLeave($event, 'done')"
-          (drop)="dropAction($event, 'done')"
-        >
-          <b>Hecha</b><small>Se puede deshacer</small>
-        </div>
-        <div
-          class="zone cancel"
-          [class.over]="overZone() === 'cancel'"
-          (dragover)="dragOver($event, 'cancel')"
-          (dragleave)="dragLeave($event, 'cancel')"
-          (drop)="$event.preventDefault(); dragEnd()"
-        >
-          <b>Cancelar</b>
-        </div>
-      </div>
-    }
 
     @if (toast(); as tst) {
       <div class="toast" role="status">
@@ -397,8 +392,6 @@ export class BoardPage {
   private readonly api = inject(QuadrantApi);
   private readonly sheet =
     viewChild.required<ElementRef<HTMLDialogElement>>('sheet');
-  private readonly matrixWrap =
-    viewChild.required<ElementRef<HTMLElement>>('matrixWrap');
   private readonly captureInput =
     viewChild.required<ElementRef<HTMLInputElement>>('captureInput');
 
@@ -784,27 +777,9 @@ export class BoardPage {
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
     // Chrome cancela el arrastre si el DOM cambia dentro de dragstart.
     setTimeout(() => {
-      if (this.dragId !== id) return;
-      this.dockRect.set(this.measureDock());
-      this.dragging.set(true);
+      if (this.dragId === id) this.dragging.set(true);
     });
   }
-  /**
-   * El panel ocupa el ancho de la matriz y la altura visible de la ventana,
-   * empezando donde empieza la matriz si está a la vista.
-   */
-  private measureDock() {
-    const margin = 16;
-    const rect = this.matrixWrap().nativeElement.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const left = Math.max(margin, rect.left);
-    const width = Math.min(rect.right, vw - margin) - left;
-    const height = Math.min(Math.max(rect.height, 420), vh - 2 * margin);
-    const top = Math.min(Math.max(rect.top, margin), vh - height - margin);
-    return { left, top, width, height };
-  }
-
   protected dragEnd() {
     this.dragId = null;
     this.dragging.set(false);
@@ -849,6 +824,17 @@ export class BoardPage {
       '/api/capabilities/task.complete',
       new Blob([body], { type: 'application/json' }),
     );
+  }
+
+  /** Si el panel queda cortado por abajo, acercarse al borde desplaza la página. */
+  @HostListener('document:dragover', ['$event'])
+  protected autoScroll(event: DragEvent) {
+    if (!this.dragId) return;
+    const edge = 70;
+    const y = event.clientY;
+    if (y > window.innerHeight - edge)
+      window.scrollBy(0, Math.ceil((y - (window.innerHeight - edge)) / 4));
+    else if (y < edge) window.scrollBy(0, -Math.ceil((edge - y) / 4));
   }
 
   @HostListener('document:keydown', ['$event'])
