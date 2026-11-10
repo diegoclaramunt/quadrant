@@ -1,3 +1,4 @@
+import { newRequestId } from '../request-id';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { addDays } from '@quadrant/domain';
@@ -149,7 +150,7 @@ export class TodayPage {
     try {
       const result = await this.api.invoke('block.execute', {
         blockId,
-        request_id: crypto.randomUUID(),
+        request_id: newRequestId(),
       });
       if (result.status !== 'ok')
         this.error.set(result.error?.message ?? 'No se pudo marcar el bloque.');

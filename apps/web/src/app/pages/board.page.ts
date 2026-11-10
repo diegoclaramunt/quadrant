@@ -1,3 +1,4 @@
+import { newRequestId } from '../request-id';
 import {
   Component,
   ElementRef,
@@ -356,8 +357,11 @@ export class BoardPage {
       .sort((a, b) => a.name.localeCompare(b.name));
   });
 
+  /** Las más recientes primero: lo que acabas de escribir se ve arriba. */
   protected readonly loose = computed(() =>
-    this.inbox().filter((t) => this.visible(t)),
+    this.inbox()
+      .filter((t) => this.visible(t))
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')),
   );
 
   constructor() {
@@ -460,11 +464,17 @@ export class BoardPage {
       }
       this.api.unwrap(
         await this.api.invoke('inbox.capture_many', {
-          request_id: crypto.randomUUID(),
+          request_id: newRequestId(),
           items,
         }),
       );
       this.draft = '';
+      this.showToast(
+        parsed.length === 1
+          ? `Añadida a «Sin colocar»: ${parsed[0][0]}`
+          : `Añadidas ${parsed.length} tareas a «Sin colocar»`,
+        false,
+      );
     });
     this.busy.set(false);
     await this.reload();
@@ -506,7 +516,7 @@ export class BoardPage {
       if (task.status === 'inbox') {
         this.api.unwrap(
           await this.api.invoke('task.process', {
-            request_id: crypto.randomUUID(),
+            request_id: newRequestId(),
             taskId: task.id,
             urgent: target.urgent,
             important: target.important,
@@ -516,7 +526,7 @@ export class BoardPage {
       } else {
         this.api.unwrap(
           await this.api.invoke('task.update', {
-            request_id: crypto.randomUUID(),
+            request_id: newRequestId(),
             taskId: task.id,
             urgent: target.urgent,
             important: target.important,
@@ -560,7 +570,7 @@ export class BoardPage {
     await this.run(async () =>
       this.api.unwrap(
         await this.api.invoke('task.complete', {
-          request_id: crypto.randomUUID(),
+          request_id: newRequestId(),
           taskId: task.id,
         }),
       ),
@@ -612,7 +622,7 @@ export class BoardPage {
       const projectId = tag ? await this.projectFor(tag) : null;
       this.api.unwrap(
         await this.api.invoke('task.update', {
-          request_id: crypto.randomUUID(),
+          request_id: newRequestId(),
           taskId: task.id,
           ...(sameTitle ? {} : { title }),
           ...(sameProject ? {} : { projectId }),

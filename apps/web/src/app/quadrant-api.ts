@@ -37,6 +37,7 @@ export interface TaskView {
   suggestArchive: boolean;
   hidden: boolean;
   completedAt?: string | null;
+  createdAt?: string;
 }
 
 @Injectable({ providedIn: 'root' })

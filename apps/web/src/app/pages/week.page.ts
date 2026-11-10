@@ -1,3 +1,4 @@
+import { newRequestId } from '../request-id';
 import {
   Component,
   ElementRef,
@@ -933,7 +934,7 @@ export class WeekPage {
     try {
       const request = {
         ...payload,
-        request_id: crypto.randomUUID(),
+        request_id: newRequestId(),
       };
       const envelope = await this.api.invoke(id, request);
       if (
