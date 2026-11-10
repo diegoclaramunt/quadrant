@@ -128,28 +128,45 @@ function writeFilter(value: string | null) {
         <p class="error" role="alert">{{ error() }}</p>
       }
 
-      @if (projectChips().length) {
+      <div class="toolbar">
         <div class="filters" aria-label="Filtrar por proyecto">
-          <button
-            type="button"
-            class="chip"
-            [attr.aria-pressed]="!filter()"
-            (click)="setFilter(null)"
-          >
-            Todo
-          </button>
-          @for (p of projectChips(); track p.id) {
+          @if (projectChips().length) {
             <button
               type="button"
               class="chip"
-              [attr.aria-pressed]="filter() === p.id"
-              (click)="setFilter(filter() === p.id ? null : p.id)"
+              [attr.aria-pressed]="!filter()"
+              (click)="setFilter(null)"
             >
-              #{{ p.name }}
+              Todo
             </button>
+            @for (p of projectChips(); track p.id) {
+              <button
+                type="button"
+                class="chip"
+                [attr.aria-pressed]="filter() === p.id"
+                (click)="setFilter(filter() === p.id ? null : p.id)"
+              >
+                #{{ p.name }}
+              </button>
+            }
           }
         </div>
-      }
+        <button
+          type="button"
+          class="refresh"
+          [class.spinning]="refreshing()"
+          [disabled]="refreshing()"
+          (click)="refresh()"
+          title="Volver a cargar las tareas"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20 11a8 8 0 0 0-14.3-4.9L4 8m0-4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16m0 4v-4h-4"
+            />
+          </svg>
+          <span>{{ refreshing() ? 'Actualizando…' : 'Actualizar' }}</span>
+        </button>
+      </div>
 
       <section
         class="tray"
@@ -315,7 +332,7 @@ function writeFilter(value: string | null) {
         }
       </div>
 
-      <details class="done-log" (toggle)="loadDone($event)">
+      <details class="done-log" #doneLog (toggle)="loadDone($event)">
         <summary>Hechas</summary>
         <ul>
           @for (t of done(); track t.id) {
@@ -392,6 +409,8 @@ export class BoardPage {
   private readonly api = inject(QuadrantApi);
   private readonly sheet =
     viewChild.required<ElementRef<HTMLDialogElement>>('sheet');
+  private readonly doneLog =
+    viewChild.required<ElementRef<HTMLDetailsElement>>('doneLog');
   private readonly captureInput =
     viewChild.required<ElementRef<HTMLInputElement>>('captureInput');
 
@@ -411,6 +430,7 @@ export class BoardPage {
   );
   protected readonly busy = signal(false);
   protected readonly dragging = signal(false);
+  protected readonly refreshing = signal(false);
   protected readonly dockRect = signal({
     left: 0,
     top: 0,
@@ -494,8 +514,24 @@ export class BoardPage {
     });
   }
 
+  /** Vuelve a pedir las tareas al servidor, sin recargar la página. */
+  protected async refresh() {
+    this.refreshing.set(true);
+    await Promise.all([
+      this.reload(),
+      this.doneLog().nativeElement.open ? this.fetchDone() : null,
+      new Promise((r) => setTimeout(r, 300)),
+    ]);
+    this.refreshing.set(false);
+    this.showToast('Tablero actualizado');
+  }
+
   protected async loadDone(event: Event) {
     if (!(event.target as HTMLDetailsElement).open) return;
+    await this.fetchDone();
+  }
+
+  private async fetchDone() {
     await this.run(async () => {
       const res = await this.api.invoke<{ tasks: TaskView[] }>('backlog.list', {
         status: 'completed',
