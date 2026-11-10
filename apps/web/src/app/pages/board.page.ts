@@ -198,7 +198,7 @@ function writeFilter(value: string | null) {
         </div>
       </section>
 
-      <div class="matrix-wrap">
+      <div class="matrix-wrap" #matrixWrap [class.hidden-for-drag]="dragging()">
         <div class="axis-x" aria-hidden="true">
           <span>Urgente →</span><span>Sin prisa</span>
         </div>
@@ -283,7 +283,14 @@ function writeFilter(value: string | null) {
     </section>
 
     @if (dragging()) {
-      <div class="dock" aria-hidden="true">
+      <div
+        class="dock"
+        aria-hidden="true"
+        [style.left.px]="dockRect().left"
+        [style.top.px]="dockRect().top"
+        [style.width.px]="dockRect().width"
+        [style.height.px]="dockRect().height"
+      >
         <div
           class="zone side trash"
           [class.over]="overZone() === 'trash'"
@@ -390,6 +397,8 @@ export class BoardPage {
   private readonly api = inject(QuadrantApi);
   private readonly sheet =
     viewChild.required<ElementRef<HTMLDialogElement>>('sheet');
+  private readonly matrixWrap =
+    viewChild.required<ElementRef<HTMLElement>>('matrixWrap');
   private readonly captureInput =
     viewChild.required<ElementRef<HTMLInputElement>>('captureInput');
 
@@ -409,6 +418,12 @@ export class BoardPage {
   );
   protected readonly busy = signal(false);
   protected readonly dragging = signal(false);
+  protected readonly dockRect = signal({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  });
   protected readonly error = signal('');
   protected draft = '';
   protected sheetDraft = '';
@@ -769,9 +784,27 @@ export class BoardPage {
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
     // Chrome cancela el arrastre si el DOM cambia dentro de dragstart.
     setTimeout(() => {
-      if (this.dragId === id) this.dragging.set(true);
+      if (this.dragId !== id) return;
+      this.dockRect.set(this.measureDock());
+      this.dragging.set(true);
     });
   }
+  /**
+   * El panel ocupa el ancho de la matriz y la altura visible de la ventana,
+   * empezando donde empieza la matriz si está a la vista.
+   */
+  private measureDock() {
+    const margin = 16;
+    const rect = this.matrixWrap().nativeElement.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const left = Math.max(margin, rect.left);
+    const width = Math.min(rect.right, vw - margin) - left;
+    const height = Math.min(Math.max(rect.height, 420), vh - 2 * margin);
+    const top = Math.min(Math.max(rect.top, margin), vh - height - margin);
+    return { left, top, width, height };
+  }
+
   protected dragEnd() {
     this.dragId = null;
     this.dragging.set(false);

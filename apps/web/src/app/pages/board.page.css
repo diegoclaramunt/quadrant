@@ -334,15 +334,13 @@ h2 {
 .dock {
   position: fixed;
   z-index: 15;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(720px, calc(100vw - 32px));
-  height: min(400px, calc(100dvh - 32px));
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 96px;
-  grid-template-rows: minmax(0, 1fr) 44px;
-  gap: 8px;
+  grid-template-columns: minmax(84px, 0.16fr) minmax(0, 1fr) minmax(
+      84px,
+      0.16fr
+    );
+  grid-template-rows: minmax(0, 1fr) 48px;
+  gap: 10px;
   padding: 10px;
   border-radius: 16px;
   background: var(--panel);
@@ -350,6 +348,10 @@ h2 {
   box-shadow:
     0 10px 40px rgb(10 15 22 / 0.18),
     0 2px 6px rgb(10 15 22 / 0.08);
+}
+/* Mientras se arrastra, la matriz de debajo no compite con el panel. */
+.matrix-wrap.hidden-for-drag {
+  visibility: hidden;
 }
 .dock-matrix {
   display: grid;
@@ -373,7 +375,7 @@ h2 {
     box-shadow 0.1s;
 }
 .zone b {
-  font: 700 17px var(--f-display);
+  font: 700 clamp(17px, 2vw, 22px) var(--f-display);
 }
 .zone small {
   color: var(--muted);
