@@ -21,6 +21,8 @@
   --q4-ink: #6b7682;
   --toast-link: #9ab8f5;
   --on-accent: #ffffff;
+  --ok: #2f7d4f;
+  --ok-bg: #e6f3eb;
   --backdrop: rgb(10 15 22 / 0.4);
   --shadow: 0 1px 2px rgb(23 32 43 / 0.06), 0 6px 20px rgb(23 32 43 / 0.07);
   --f-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
@@ -53,6 +55,8 @@
     --q4-ink: #9aa6b3;
     --toast-link: #2b59c3;
     --on-accent: #10151c;
+    --ok: #6cc690;
+    --ok-bg: #16281e;
     --backdrop: rgb(0 0 0 / 0.6);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.25);
     color-scheme: dark;

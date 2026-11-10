@@ -82,6 +82,24 @@ const norm = (value: string) =>
     .replace(/[^a-z0-9]/g, '');
 
 const UNDO_MS = 5000;
+const FILTER_KEY = 'quadrant.board.filter';
+
+function readFilter(): string | null {
+  try {
+    return localStorage.getItem(FILTER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeFilter(value: string | null) {
+  try {
+    if (value) localStorage.setItem(FILTER_KEY, value);
+    else localStorage.removeItem(FILTER_KEY);
+  } catch {
+    // Sin almacenamiento local, el filtro simplemente no se recuerda.
+  }
+}
 
 @Component({
   selector: 'app-board-page',
@@ -116,7 +134,7 @@ const UNDO_MS = 5000;
             type="button"
             class="chip"
             [attr.aria-pressed]="!filter()"
-            (click)="filter.set(null)"
+            (click)="setFilter(null)"
           >
             Todo
           </button>
@@ -125,7 +143,7 @@ const UNDO_MS = 5000;
               type="button"
               class="chip"
               [attr.aria-pressed]="filter() === p.id"
-              (click)="filter.set(filter() === p.id ? null : p.id)"
+              (click)="setFilter(filter() === p.id ? null : p.id)"
             >
               #{{ p.name }}
             </button>
@@ -159,7 +177,14 @@ const UNDO_MS = 5000;
               (keydown.enter)="pick(t.id)"
               (keydown.space)="$event.preventDefault(); pick(t.id)"
               (dblclick)="open(t)"
+              [class.done]="pendingDone().has(t.id)"
             >
+              <button
+                type="button"
+                class="check"
+                [attr.aria-label]="'Marcar hecha: ' + t.title"
+                (click)="$event.stopPropagation(); complete(t)"
+              ></button>
               <span>{{ t.title }}</span>
               @if (projectName(t); as name) {
                 <small class="proj">#{{ name }}</small>
@@ -257,6 +282,45 @@ const UNDO_MS = 5000;
       </details>
     </section>
 
+    @if (dragging()) {
+      <div class="dock" aria-hidden="true">
+        <div
+          class="zone side trash"
+          [class.over]="overZone() === 'trash'"
+          (dragover)="dragOver($event, 'trash')"
+          (dragleave)="dragLeave($event, 'trash')"
+          (drop)="dropAction($event, 'trash')"
+        >
+          <b>Borrar</b><small>Se puede deshacer</small>
+        </div>
+        <div class="dock-matrix">
+          @for (q of quadrants; track q.id) {
+            <div
+              class="zone"
+              [attr.data-q]="q.id"
+              [class.over]="overZone() === 'dock-' + q.id"
+              (dragover)="dragOver($event, 'dock-' + q.id)"
+              (dragleave)="dragLeave($event, 'dock-' + q.id)"
+              (drop)="drop($event, q.id)"
+            >
+              <b>{{ q.name }}</b
+              ><small>{{ q.sub }}</small>
+              <span class="key">{{ q.key }}</span>
+            </div>
+          }
+        </div>
+        <div
+          class="zone side finish"
+          [class.over]="overZone() === 'done'"
+          (dragover)="dragOver($event, 'done')"
+          (dragleave)="dragLeave($event, 'done')"
+          (drop)="dropAction($event, 'done')"
+        >
+          <b>Hecha</b><small>Se puede deshacer</small>
+        </div>
+      </div>
+    }
+
     @if (toast(); as tst) {
       <div class="toast" role="status">
         <span>{{ tst.text }}</span>
@@ -299,11 +363,9 @@ const UNDO_MS = 5000;
             }
           </div>
           <div class="sheet-row">
-            @if (t.status !== 'inbox') {
-              <button type="button" class="btn" (click)="complete(t)">
-                Marcar hecha
-              </button>
-            }
+            <button type="button" class="btn" (click)="complete(t)">
+              Marcar hecha
+            </button>
             <button type="button" class="btn danger" (click)="remove(t)">
               {{ confirmDelete() ? '¿Seguro? Borrar' : 'Borrar' }}
             </button>
@@ -327,7 +389,7 @@ export class BoardPage {
   protected readonly backlog = signal<TaskView[]>([]);
   protected readonly done = signal<TaskView[]>([]);
   protected readonly projects = signal<Project[]>([]);
-  protected readonly filter = signal<string | null>(null);
+  protected readonly filter = signal<string | null>(readFilter());
   protected readonly selected = signal<string | null>(null);
   protected readonly overZone = signal<string | null>(null);
   protected readonly editing = signal<TaskView | null>(null);
@@ -337,6 +399,7 @@ export class BoardPage {
     null,
   );
   protected readonly busy = signal(false);
+  protected readonly dragging = signal(false);
   protected readonly error = signal('');
   protected draft = '';
   protected sheetDraft = '';
@@ -345,6 +408,7 @@ export class BoardPage {
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private undoTask: TaskView | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
+  private toastUndo: (() => void) | null = null;
 
   protected readonly projectChips = computed(() => {
     const used = new Set(
@@ -366,6 +430,11 @@ export class BoardPage {
 
   constructor() {
     void this.reload();
+  }
+
+  protected setFilter(value: string | null) {
+    this.filter.set(value);
+    writeFilter(value);
   }
 
   protected byQuadrant(id: Quadrant) {
@@ -473,7 +542,6 @@ export class BoardPage {
         parsed.length === 1
           ? `Añadida a «Sin colocar»: ${parsed[0][0]}`
           : `Añadidas ${parsed.length} tareas a «Sin colocar»`,
-        false,
       );
     });
     this.busy.set(false);
@@ -542,11 +610,18 @@ export class BoardPage {
     this.flushUndo();
     this.pendingDone.update((s) => new Set(s).add(task.id));
     this.undoTask = task;
-    this.showToast(`Hecha: ${task.title}`, true);
+    this.showToast(`Hecha: ${task.title}`, () => this.cancelComplete());
     this.undoTimer = setTimeout(() => void this.flushUndo(), UNDO_MS);
   }
 
   protected undo() {
+    const action = this.toastUndo;
+    this.toastUndo = null;
+    this.toast.set(null);
+    action?.();
+  }
+
+  private cancelComplete() {
     if (this.undoTimer) clearTimeout(this.undoTimer);
     const task = this.undoTask;
     this.undoTimer = null;
@@ -558,7 +633,6 @@ export class BoardPage {
         return next;
       });
     }
-    this.toast.set(null);
   }
 
   private async flushUndo() {
@@ -580,15 +654,18 @@ export class BoardPage {
       next.delete(task.id);
       return next;
     });
-    if (this.toast()?.undo) this.toast.set(null);
     await this.reload();
     this.done.update((list) => [{ ...task, status: 'completed' }, ...list]);
   }
 
-  private showToast(text: string, undo: boolean) {
+  private showToast(text: string, undo: (() => void) | null = null) {
     if (this.toastTimer) clearTimeout(this.toastTimer);
-    this.toast.set({ text, undo });
-    this.toastTimer = setTimeout(() => this.toast.set(null), UNDO_MS);
+    this.toastUndo = undo;
+    this.toast.set({ text, undo: !!undo });
+    this.toastTimer = setTimeout(() => {
+      this.toast.set(null);
+      this.toastUndo = null;
+    }, UNDO_MS);
   }
 
   protected open(task: TaskView) {
@@ -639,7 +716,12 @@ export class BoardPage {
     }
     this.editing.set(null);
     this.sheet().nativeElement.close();
-    await this.run(async () => {
+    await this.archive(task);
+  }
+
+  /** Borrar es archivar: se puede deshacer restaurando la tarea. */
+  private async archive(task: TaskView) {
+    const ok = await this.run(async () => {
       const first = await this.api.invoke('task.archive', { taskId: task.id });
       if (first.status === 'needs_confirmation' && first.confirmation_token) {
         this.api.unwrap(
@@ -652,8 +734,22 @@ export class BoardPage {
       } else {
         this.api.unwrap(first);
       }
+      return true;
     });
-    this.showToast(`Borrada: ${task.title}`, false);
+    if (!ok) return;
+    this.showToast(`Borrada: ${task.title}`, () => void this.restore(task));
+    await this.reload();
+  }
+
+  private async restore(task: TaskView) {
+    await this.run(async () =>
+      this.api.unwrap(
+        await this.api.invoke('task.unarchive', {
+          request_id: newRequestId(),
+          taskId: task.id,
+        }),
+      ),
+    );
     await this.reload();
   }
 
@@ -662,10 +758,23 @@ export class BoardPage {
     this.dragId = id;
     event.dataTransfer?.setData('text/plain', id);
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    // Chrome cancela el arrastre si el DOM cambia dentro de dragstart.
+    setTimeout(() => {
+      if (this.dragId === id) this.dragging.set(true);
+    });
   }
   protected dragEnd() {
     this.dragId = null;
+    this.dragging.set(false);
     this.overZone.set(null);
+  }
+  protected dropAction(event: DragEvent, action: 'done' | 'trash') {
+    event.preventDefault();
+    const task = this.dragId && this.find(this.dragId);
+    this.dragEnd();
+    if (!task) return;
+    if (action === 'done') this.complete(task);
+    else void this.archive(task);
   }
   protected dragOver(event: DragEvent, zone: string) {
     if (!this.dragId) return;
@@ -682,6 +791,22 @@ export class BoardPage {
     const task = this.dragId && this.find(this.dragId);
     this.dragEnd();
     if (task) void this.place(task, q);
+  }
+
+  /** Si se cierra o recarga la página durante el «Deshacer», la completada se envía igual. */
+  @HostListener('window:pagehide')
+  protected onPageHide() {
+    const task = this.undoTask;
+    if (!task) return;
+    this.undoTask = null;
+    const body = JSON.stringify({
+      request_id: newRequestId(),
+      taskId: task.id,
+    });
+    navigator.sendBeacon(
+      '/api/capabilities/task.complete',
+      new Blob([body], { type: 'application/json' }),
+    );
   }
 
   @HostListener('document:keydown', ['$event'])

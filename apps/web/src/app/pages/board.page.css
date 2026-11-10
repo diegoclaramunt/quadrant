@@ -108,8 +108,14 @@ h2 {
 .tray-list {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 8px;
   min-height: 34px;
+  /* Con muchas tareas la bandeja se desplaza por dentro y la matriz sigue a la vista. */
+  max-height: min(30vh, 240px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
 }
 .tray-empty {
   color: var(--muted);
@@ -134,6 +140,20 @@ h2 {
 }
 .loose span {
   overflow-wrap: anywhere;
+}
+.loose .check {
+  --qc: var(--line-strong);
+  --qbg: var(--surface-subtle);
+  margin-top: 0;
+  width: 16px;
+  height: 16px;
+}
+.loose.done span {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.loose.done .check {
+  background: var(--muted);
 }
 .proj {
   font: 11px var(--f-mono);
@@ -310,6 +330,61 @@ h2 {
   gap: 2px;
 }
 
+/* Panel de arrastre: fijo sobre la pantalla, sin desplazarse. */
+.dock {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: minmax(90px, 0.6fr) minmax(0, 3fr) minmax(90px, 0.6fr);
+  gap: 12px;
+  padding: calc(16px + env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(3px);
+}
+.dock-matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+}
+.zone {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  border-radius: 14px;
+  border: 2px dashed var(--qc, var(--line-strong));
+  background: var(--qbg, var(--panel));
+  color: var(--qc, var(--text));
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+.zone b {
+  font: 700 clamp(18px, 2.4vw, 26px) var(--f-display);
+}
+.zone small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.zone.over {
+  border-style: solid;
+  box-shadow: 0 0 0 3px var(--qc, var(--line-strong)) inset;
+  transform: scale(1.015);
+}
+.zone.trash {
+  --qc: var(--danger);
+  --qbg: var(--q1);
+}
+.zone.finish {
+  --qc: var(--ok);
+  --qbg: var(--ok-bg);
+}
 .toast {
   position: fixed;
   left: 50%;
@@ -434,6 +509,19 @@ h2 {
   }
   .q {
     min-height: 0;
+  }
+  .dock {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 3fr 1fr;
+  }
+  .dock-matrix {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone {
+    transition: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
