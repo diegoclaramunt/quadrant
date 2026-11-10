@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cliente mínimo de Quadrant para la skill: añade tareas y lista el tablero.
+"""Cliente mínimo de Quadrant para la skill: añade, lista y cierra tareas.
 
 Habla con la API HTTP del servidor (por defecto el NAS de casa). Solo stdlib.
 """
@@ -74,19 +74,63 @@ def add(args):
     print(f"Añadida a {where}: {task['title']}{extra}")
 
 
-def board(_args):
+def open_tasks():
+    return call("inbox.list")["tasks"] + call("backlog.list")["tasks"]
+
+
+def where(task):
+    return NAMES[task["quadrant"]] if task["status"] == "backlog" else "Sin colocar"
+
+
+def find(query, tasks):
+    """Por id (o su prefijo), título exacto o palabras contenidas en el título."""
+    q = query.strip()
+    by_id = [t for t in tasks if len(q) >= 6 and t["id"].startswith(q)]
+    if by_id:
+        return by_id
+    exact = [t for t in tasks if norm(t["title"]) == norm(q)]
+    if exact:
+        return exact
+    words = [norm(w) for w in q.split() if norm(w)]
+    return [t for t in tasks if all(w in norm(t["title"]) for w in words)]
+
+
+def done(args):
+    tasks = open_tasks()
+    failed = False
+    for query in args.tarea:
+        found = find(query, tasks)
+        if len(found) == 1:
+            t = found[0]
+            call("task.complete", {"request_id": str(uuid.uuid4()), "taskId": t["id"]})
+            tasks = [x for x in tasks if x["id"] != t["id"]]
+            print(f"Hecha: {t['title']} (estaba en {where(t)})")
+            continue
+        failed = True
+        if not found:
+            print(f"No encuentro ninguna tarea abierta con «{query}».")
+        else:
+            print(f"«{query}» coincide con {len(found)} tareas; repite con el id:")
+            for t in found:
+                print(f"  {t['id'][:8]}  {t['title']}  [{where(t)}]")
+    if failed:
+        sys.exit(2)
+
+
+def board(args):
     projects = {p["id"]: p["name"] for p in call("project.list")["projects"]}
     tag = lambda t: f"  #{projects[t['projectId']]}" if t.get("projectId") in projects else ""
+    ref = lambda t: f"{t['id'][:8]}  " if args.ids else ""
     inbox = call("inbox.list")["tasks"]
     backlog = call("backlog.list")["tasks"]
     print(f"Sin colocar ({len(inbox)})")
     for t in inbox:
-        print(f"  - {t['title']}{tag(t)}")
+        print(f"  - {ref(t)}{t['title']}{tag(t)}")
     for code, _, _, name in QUADRANTS.values():
         items = [t for t in backlog if t["quadrant"] == code]
         print(f"{name} ({len(items)})")
         for t in items:
-            print(f"  - {t['title']}{tag(t)}")
+            print(f"  - {ref(t)}{t['title']}{tag(t)}")
     print(f"\n{BASE}/board")
 
 
@@ -100,7 +144,11 @@ def main():
     a.add_argument("--notas")
     a.set_defaults(fn=add)
     b = sub.add_parser("board", help="Muestra el tablero")
+    b.add_argument("--ids", action="store_true", help="Muestra el id corto de cada tarea")
     b.set_defaults(fn=board)
+    d = sub.add_parser("done", help="Marca como hechas una o varias tareas abiertas")
+    d.add_argument("tarea", nargs="+", help="Id (o sus 8 primeros caracteres), título o palabras del título")
+    d.set_defaults(fn=done)
     args = parser.parse_args()
     args.fn(args)
 
